@@ -71,3 +71,12 @@ export function memorialUndoUntil(circle: Pick<CircleRow, "mode" | "mode_changed
   if (circle.mode !== "memorial" || !circle.mode_changed_at) return null;
   return new Date(circle.mode_changed_at.getTime() + MEMORIAL_UNDO_DAYS * 24 * 60 * 60 * 1000);
 }
+
+/**
+ * Posting (wishes, plans, Talk it through, cards, memories, photos, voice notes, videos) is the
+ * owner's. Everyone else in the circle reads, comments and takes quests.
+ */
+export function canPost(viewer: Viewer): boolean {
+  return viewer.role === "owner";
+}
+export const POST_FORBIDDEN = "Only the circle’s owner can post. You can leave a message or take a quest.";

@@ -30,7 +30,7 @@ export function SignInForm({ next, initialError, autoFocus }: { next: string | n
     }).catch(() => null);
     const data = await res?.json().catch(() => null);
     if (!res?.ok) {
-      setError(data?.error?.message ?? "We couldn’t reach Wish Circle. Please check your connection.");
+      setError(data?.error?.message ?? "We couldn’t reach 1stQuest. Please check your connection.");
       setState({ kind: "idle" });
       return;
     }

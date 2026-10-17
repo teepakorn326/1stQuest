@@ -8,6 +8,7 @@ import { canInvite, memorialUndoUntil } from "@/lib/authz";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listMembers } from "@/lib/db/queries/memberships";
 import { PasswordForm } from "./PasswordForm";
+import { PhoneForm } from "./PhoneForm";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function CirclePage() {
           <h2 className="m-0 text-base font-bold">In the circle</h2>
           <ul className="m-0 flex list-none flex-col rounded-[14px] border border-line bg-surface p-0" data-testid="members">
             {members.map((m, i) => (
-              <li key={m.user_id} className={`flex items-center gap-3 px-3.5 py-3 ${i < members.length - 1 ? "border-b border-[#E6EEF4]" : ""}`}>
+              <li key={m.user_id} className={`flex items-center gap-3 px-3.5 py-3 ${i < members.length - 1 ? "border-b border-[#F6EBDA]" : ""}`}>
                 <Avatar name={m.name ?? m.email} seed={m.user_id} />
                 <span className="flex-1 text-base">
                   {m.name ?? m.email}
@@ -55,6 +56,7 @@ export default async function CirclePage() {
             <p className="m-0 text-[15px] text-ink-2">
               Signed in as <b className="text-ink">{user.email}</b>
             </p>
+            <PhoneForm phone={user.phone} optIn={user.sms_opt_in} />
             <PasswordForm hasPassword={Boolean(user.password_hash)} />
             <form action="/api/v1/auth/sign-out" method="post" className="m-0">
               <button type="submit" className="min-h-11 text-[15px] font-bold text-primary">

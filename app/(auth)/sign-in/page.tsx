@@ -27,7 +27,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <div className="flex h-16 w-16 items-center justify-center rounded-[18px] bg-primary-soft text-primary">
           <BookIcon size={32} />
         </div>
-        <h1 className="m-0 text-[30px] leading-tight font-bold">Wish Circle</h1>
+        <h1 className="m-0 text-[30px] leading-tight font-bold">1stQuest</h1>
         <p className="m-0 text-lg text-ink-2">
           {invite
             ? `You’ve been invited to ${invite.patient_name}’s circle. Enter your email and we’ll get you in.`

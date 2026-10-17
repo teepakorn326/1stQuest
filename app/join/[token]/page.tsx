@@ -9,7 +9,7 @@ import { JoinButton } from "./JoinButton";
 export const dynamic = "force-dynamic";
 
 const ROLE_COPY = {
-  family: "You’ll be able to see shared wishes, take quests and add to cards.",
+  family: "You’ll be able to see shared wishes, take quests and leave messages on cards.",
   doctor: "You’re joining as part of the care team. You’ll see the wishes the family shares and can take quests, like the ones marked for the care team.",
 };
 

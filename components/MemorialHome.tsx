@@ -19,20 +19,24 @@ function holds(c: RecentCard): string {
 }
 
 /** Home in memorial mode: "Remembering <name>". */
-export function MemorialHome({ name, photoSrc, cards }: { name: string; photoSrc: string | null; cards: RecentCard[] }) {
+export function MemorialHome({ name, photoSrc, cards, canPost }: { name: string; photoSrc: string | null; cards: RecentCard[]; canPost: boolean }) {
   return (
     <main className="flex flex-col gap-5 px-5 pt-8 pb-5" data-testid="memorial-home">
       <header className="flex flex-col items-center gap-3 text-center">
-        <Avatar name={name} seed="patient" size={96} src={photoSrc} tone="bg-[#C7DCEE] text-primary" className="border-4 border-white shadow-[0_2px_8px_rgba(28,43,58,0.12)]" />
+        <Avatar name={name} seed="patient" size={96} src={photoSrc} tone="bg-[#FFE3B8] text-primary" className="border-4 border-white shadow-[0_2px_8px_rgba(28,43,58,0.12)]" />
         <div className="flex flex-col gap-1">
           <span className="text-[15px] text-ink-3">Remembering</span>
           <h1 className="m-0 text-[26px] font-bold">{name}</h1>
         </div>
-        <p className="m-0 max-w-[300px] text-base text-[#33475A]">{name}’s book stays open. Add the moments you remember, whenever you’re ready.</p>
+        <p className="m-0 max-w-[300px] text-base text-[#4A3926]">
+          {name}’s book stays open. {canPost ? "Add the moments you remember, whenever you’re ready." : "Leave a message on the cards whenever you’re ready."}
+        </p>
       </header>
-      <ButtonLink href="/memories/new">
-        <PlusIcon size={22} /> Share a memory
-      </ButtonLink>
+      {canPost && (
+        <ButtonLink href="/memories/new">
+          <PlusIcon size={22} /> Share a memory
+        </ButtonLink>
+      )}
       <section className="flex flex-col gap-2.5">
         <h2 className="m-0 text-[17px] font-bold">Newly added</h2>
         {cards.length === 0 && (
@@ -49,7 +53,7 @@ export function MemorialHome({ name, photoSrc, cards }: { name: string; photoSrc
               c.level > 0 ? "border-[3px] border-gold" : "border border-line",
             )}
           >
-            <div className="flex h-[92px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-[#B5D0E7] text-primary">
+            <div className="flex h-[92px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-[#FFDFAE] text-primary">
               {c.cover_media_id ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={`/api/v1/media/${c.cover_media_id}`} alt="" className="h-full w-full object-cover" />

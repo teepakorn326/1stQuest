@@ -2,9 +2,10 @@
 
 Every feature in the spec appears in exactly one list. Nothing is described as partially working: anything not fully working is under **Not built**.
 
-_Last updated: Phase 7 (photo book PDF and slideshow). Every phase in the spec is now built. Live at https://wish-circle-iota.vercel.app._
+_Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owner-only posting, comments instead of likes, gold animation, microphone on New wish, card share links, notifications by app and text). Live at https://wish-circle-iota.vercel.app._
 
 **Before you judge:**
+- **Text messages are in dev mode.** ClickSend isn’t configured yet, so texts are prepared and logged, not sent. Setting `CLICKSEND_USERNAME` and `CLICKSEND_API_KEY` (and optionally `CLICKSEND_FROM`) turns them on with no code change.
 - **Sign-in is in dev mode.** No verified email sender is set up yet, so the sign-in link is shown on screen instead of emailed. This also means anyone can sign in as any email address, including the demo accounts. It makes the demo easy to try; it is not production auth. Setting `RESEND_API_KEY` and a verified `EMAIL_FROM` switches to real email with no code change.
 - Supabase’s free plan caps uploads at 50MB per file, so videos are capped at 50MB rather than the spec’s 100MB.
 - `pnpm smoke` runs the whole demo loop below against the live URL with two people and the real AI. Last two runs: passed in 27s and 22s, with the live update reaching the other screen in 797 ms and 801 ms.
@@ -50,7 +51,13 @@ _Last updated: Phase 7 (photo book PDF and slideshow). Every phase in the spec i
   - A draft containing a banned word is rewritten once.
   - If the AI fails, the photos and words are kept and “Make the card” can be retried without re-uploading.
 - Card reveal: spin-in, shine and sparkle, then “Add to the book” (the card flies into the book), “Change the words” (author only), “Open the card”, “Play again”. Respects reduced-motion settings.
-- Card detail: photos, words, credit line (“Made from N photos and <name>’s story”), place and date, likes (with who liked it), messages to the person, and adding more photos.
+- Card detail: photos (clipped to their frame, so tall photos never cover the words), words, credit line (“Made from N photos and <name>’s story”), place and date, and messages to the person. There are no likes: comments are how people show love.
+- Only the circle’s owner posts: wishes, plans, Talk it through, cards, memories, and photos, voice notes or videos. Everyone else reads, comments and takes quests. Posting controls are hidden from them, and the API refuses with 403.
+- Microphone on New wish: tap it and speak, and the words go into the wish box (browser speech recognition, where supported).
+- Share one card: the card’s owner can create a link that anyone can open without signing in. It shows only that card (words, photos, recordings), with no messages, members or anything else from the circle. “Stop sharing” turns the link off straight away. Shared pages are marked noindex.
+- Notifications when the owner posts (a wish, a plan, a card, a memory, or photos, voice or video added to a card). They go automatically to everyone in the circle who may see the post; a private wish notifies no one.
+  - In the app: a bell with an unread count, a Notifications page, and a live pop-up (an empty Realtime ping on each person’s own channel; 30-second poll as a fallback).
+  - By text message (ClickSend): each person can add a mobile number and opt in from the Circle tab. Texts go out after the post is saved and never slow it down.
 - The book, which has no finished state:
   - Collection: six category slots. Filled slots show fanned covers and a count; empty slots show a gentle prompt and “Add a wish”.
   - Timeline: cards grouped by “Month · season”, with seasons for the southern hemisphere.
@@ -59,7 +66,7 @@ _Last updated: Phase 7 (photo book PDF and slideshow). Every phase in the spec i
   - Videos are picked from the phone (or recorded with its camera), up to 2 minutes and 50MB.
   - They upload the same way as photos. The server checks the stored file’s real type and size and keeps it as-is at `<circleId>/<mediaId>.<ext>`.
   - They play on the card from the same gated media URL.
-- Card level-up: when 3 or more different members have contributed to a card (made it, added a photo, voice note or video, or left a message), it turns gold everywhere it appears, gets a “Gold card · the family loves this one” chip, and posts once to the feed. The person whose contribution tipped it over sees a one-time “✨ Levelled up” toast.
+- Card level-up: when 3 or more different members have contributed to a card (made it, left a message, or added a photo, voice note or video), it turns gold everywhere it appears. It gets a “Gold card · the family loves this one” chip and posts once to the feed. The moment it turns gold, the card pulses, glows, sweeps with light and throws sparkles, and the person whose message tipped it over sees a one-time “✨ Levelled up” toast. Gold cards keep a gentle shimmer. All motion is off with reduced-motion settings.
 - Memorial mode (owner only): a confirmation screen explains what changes; it can be undone for 30 days.
   - Home becomes “Remembering <name>” with “Share a memory” and the newest cards (who shared each, and what it holds).
   - The menu becomes Home / Book / Family.
@@ -87,7 +94,7 @@ _Last updated: Phase 7 (photo book PDF and slideshow). Every phase in the spec i
 
 ## Not built
 
-- Likes on individual messages (in the design, not in the spec’s data model).
+- Likes of any kind: removed after the smoke test in favour of comments. The old `card_likes` table is still in the database (migrations are forward-only) but nothing uses it.
 - Birth and death years on the memorial Home (the design shows “[Birth year] – [Year]”; the app doesn’t collect dates).
 - Choosing the hemisphere: every circle uses the southern hemisphere for seasons. The column exists, but there’s no setting.
 - Notes from the care team on plans (the feed design shows “Dr Lin left a note”).
@@ -109,4 +116,7 @@ _Last updated: Phase 7 (photo book PDF and slideshow). Every phase in the spec i
 - Level-up counts the card’s maker as a contributor, so a card needs two other people to turn gold.
 - Switching to memorial mode posts nothing to the activity feed, on purpose.
 - The PDF uses the built-in Helvetica font rather than Atkinson Hyperlegible, so printing doesn’t depend on fetching a font at render time.
+- The app is named 1stQuest and uses the amber design from the updated Figma export. Its background image wasn’t in the export, so the page uses a warm cream colour instead.
+- “Only the owner posts” is stricter than the original spec, which let family add wishes and moments. Taking quests stays open to everyone, because it isn’t posting and it is the heart of the demo.
+- Gold now comes from comments and contributions only (there are no likes).
 - The smoke test creates its own circle on each run (and covers create circle and invite/join) instead of adding to Nana Rose’s circle, so the seeded demo stays clean.

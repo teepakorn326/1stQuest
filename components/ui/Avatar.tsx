@@ -3,8 +3,8 @@ import clsx from "clsx";
 const tones = [
   "bg-primary-soft text-primary",
   "bg-warm text-warm-ink",
-  "bg-[#E9EEF2] text-ink-2",
-  "bg-[#C7DCEE] text-primary",
+  "bg-[#F6EBDA] text-ink-2",
+  "bg-[#FFE3B8] text-primary",
 ];
 
 export function initialOf(name: string | null | undefined, fallback = "?"): string {
@@ -29,7 +29,7 @@ export function Avatar({
   seed?: string;
   size?: number;
   src?: string | null;
-  /** Override the seeded colour, e.g. "bg-[#C7DCEE] text-primary". */
+  /** Override the seeded colour, e.g. "bg-[#FFE3B8] text-primary". */
   tone?: string;
   className?: string;
 }) {

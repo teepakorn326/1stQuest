@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { canSeeWish } from "@/lib/authz";
 import { requirePageUser } from "@/lib/auth/session";
@@ -15,6 +15,7 @@ export default async function AddMomentsPage({ params }: { params: Promise<{ id:
   const wish = /^[0-9a-f-]{36}$/i.test(id) ? await findWishForMember(id, user.id) : null;
   if (!wish || !canSeeWish({ userId: user.id, role: wish.viewer_role }, wish, wish.viewer_ids)) notFound();
   const circle = await findCircleForMember(wish.circle_id, user.id);
+  if (circle?.role !== "owner") redirect(`/wishes/${wish.id}`);
 
   return (
     <main className="flex flex-col">

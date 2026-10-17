@@ -76,7 +76,7 @@ d("level-up and recordings", async () => {
     const voice = crypto.randomUUID();
     await media.insertMedia({ id: voice, circleId, uploaderId: ids.c, path: `${circleId}/${voice}.webm`, mimeType: "audio/webm", bytes: 5, kind: "voice", durationSec: 12 });
     const r = await media.attachPhotosToCard({ cardId: card.id, circleId, wishId: null, wishText: null, cardTitle: "T", actorId: ids.c, mediaIds: [voice] });
-    expect(r).toEqual({ added: 1, levelledUp: true });
+    expect(r).toMatchObject({ added: 1, levelledUp: true });
     expect(await level(card.id)).toBe(1);
     expect((await cards.addMessage(detail, ids.c, "again")).levelledUp).toBe(false);
     const [{ n }] = (await raw<{ n: number }[]>`select count(*)::int as n from activity where ref_id = ${card.id} and type = 'card_levelled_up'`) as unknown as [{ n: number }];

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { readBody, route, notFound, badRequest, HttpError } from "@/lib/http";
+import { readBody, route, forbidden, notFound, badRequest, HttpError } from "@/lib/http";
 import { requireApiUser } from "@/lib/auth/session";
-import { canSeeWish } from "@/lib/authz";
+import { canPost, canSeeWish, POST_FORBIDDEN } from "@/lib/authz";
 import { AiError } from "@/lib/ai";
 import { photosForModel, writeCard } from "@/lib/cards";
 import { findCircleForMember } from "@/lib/db/queries/circles";
@@ -10,6 +10,7 @@ import { createCard } from "@/lib/db/queries/cards";
 import { findMediaByIds } from "@/lib/db/queries/media";
 import { findWishForMember } from "@/lib/db/queries/wishes";
 import { MAX_PHOTOS } from "@/lib/images";
+import { queueTexts, textFor } from "@/lib/notify";
 
 export const maxDuration = 60;
 
@@ -23,6 +24,7 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
   const user = await requireApiUser();
   const wish = await findWishForMember(z.uuid().parse(params.id), user.id);
   if (!wish || !canSeeWish({ userId: user.id, role: wish.viewer_role }, wish, wish.viewer_ids)) throw notFound();
+  if (!canPost({ userId: user.id, role: wish.viewer_role })) throw forbidden(POST_FORBIDDEN);
   const { story, mediaIds } = await readBody(req, Body);
 
   const media = (await findMediaByIds(wish.circle_id, mediaIds)).filter((m) => m.uploader_id === user.id && !m.card_id);
@@ -50,6 +52,7 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
       place: words.place?.slice(0, 40) ?? null,
       mediaIds: ordered.map((m) => m.id),
     });
+    queueTexts(card.sms, textFor({ kind: "card", actorName: user.name ?? "The owner", patientName: circle.patient_name, title: card.title, path: `/cards/${card.id}` }));
     return NextResponse.json({ card: { id: card.id } }, { status: 201 });
   } catch (err) {
     if (err instanceof AiError) {

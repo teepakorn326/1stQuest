@@ -31,7 +31,7 @@ const MEMORY_PROMPT: Record<Category, (name: string) => string> = {
 };
 
 const TILTS = ["-rotate-6", "rotate-3", "-rotate-2"];
-const TONES = ["bg-[#C7DCEE]", "bg-[#A4C4DF]", "bg-[#B5D0E7]"];
+const TONES = ["bg-[#FFE3B8]", "bg-[#FFD497]", "bg-[#FFDFAE]"];
 
 function Cover({ card, className }: { card: BookCard; className?: string }) {
   return (
@@ -48,25 +48,27 @@ function Cover({ card, className }: { card: BookCard; className?: string }) {
   );
 }
 
-function Collection({ cards, name, memorial }: { cards: BookCard[]; name: string; memorial: boolean }) {
+function Collection({ cards, name, memorial, canPost }: { cards: BookCard[]; name: string; memorial: boolean; canPost: boolean }) {
   return (
     <div className="grid grid-cols-2 gap-3" data-testid="collection">
       {CATEGORIES.map((cat) => {
         const inCat = cards.filter((c) => c.category === cat);
         if (inCat.length === 0) {
           return (
-            <div key={cat} className="flex flex-col gap-2.5 rounded-2xl border-[1.5px] border-dashed border-[#A9C3D8] p-3.5" data-slot={cat}>
+            <div key={cat} className="flex flex-col gap-2.5 rounded-2xl border-[1.5px] border-dashed border-[#E8CFA6] p-3.5" data-slot={cat}>
               <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink-2">
                 <CategoryIcon category={cat} size={18} />
                 {CATEGORY_LABEL[cat]}
               </span>
               <p className="m-0 flex-1 text-[15px] leading-snug text-ink-2">{memorial ? MEMORY_PROMPT[cat](name) : PROMPT[cat](name)}</p>
-              <Link
-                href={memorial ? `/memories/new?category=${cat}` : `/wishes/new?category=${cat}`}
-                className="flex min-h-11 items-center text-[15px] font-bold no-underline"
-              >
-                {memorial ? "Share a memory" : "Add a wish"}
-              </Link>
+              {canPost && (
+                <Link
+                  href={memorial ? `/memories/new?category=${cat}` : `/wishes/new?category=${cat}`}
+                  className="flex min-h-11 items-center text-[15px] font-bold no-underline"
+                >
+                  {memorial ? "Share a memory" : "Add a wish"}
+                </Link>
+              )}
             </div>
           );
         }
@@ -121,7 +123,7 @@ function Timeline({ cards, hemisphere }: { cards: BookCard[]; hemisphere: "north
                 c.level > 0 ? "border-[3px] border-gold" : "border border-line",
               )}
             >
-              <Cover card={c} className="h-[92px] w-[76px] shrink-0 rounded-[10px] !border-0 bg-[#A4C4DF]" />
+              <Cover card={c} className="h-[92px] w-[76px] shrink-0 rounded-[10px] !border-0 bg-[#FFD497]" />
               <div className="flex flex-col justify-center gap-1">
                 <span className="text-[13px] font-bold text-primary-hover">{CATEGORY_LABEL[c.category]}</span>
                 <span className="text-[17px] leading-tight font-bold">{c.title}</span>
@@ -185,13 +187,15 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           </Link>
         </p>
       )}
-      {view === "collection" ? <Collection cards={all} name={circle.patient_name} memorial={circle.mode === "memorial"} /> : <Timeline cards={cards} hemisphere={circle.hemisphere} />}
+      {view === "collection" ? <Collection cards={all} name={circle.patient_name} memorial={circle.mode === "memorial"} canPost={circle.role === "owner"} /> : <Timeline cards={cards} hemisphere={circle.hemisphere} />}
+      {circle.role === "owner" && (
       <Link
         href={circle.mode === "memorial" ? "/memories/new" : "/wishes/new"}
-        className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-[#A9C3D8] text-[15px] font-bold no-underline"
+        className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-[#E8CFA6] text-[15px] font-bold no-underline"
       >
         <PlusIcon size={18} /> {circle.mode === "memorial" ? "Share a memory" : "Add a wish for the next page"}
       </Link>
+      )}
     </main>
   );
 }

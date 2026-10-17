@@ -22,6 +22,8 @@ export default async function WishesPage() {
       <PageHeader title={`${circle.patient_name}’s wishes`} />
       <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
       <div className="flex flex-col gap-4 px-5 pt-2 pb-5">
+        {circle.role === "owner" && (
+        <>
         <ButtonLink href="/wishes/new">
           <PlusIcon size={22} /> Add a wish
         </ButtonLink>
@@ -37,6 +39,8 @@ export default async function WishesPage() {
             <span className="text-sm text-ink-3">Not sure where to start? A few gentle questions can help.</span>
           </div>
         </Link>
+        </>
+        )}
         <section className="flex flex-col gap-2.5" data-testid="wish-list">
           {wishes.length === 0 ? (
             <p className="m-0 rounded-[14px] border border-dashed border-accent bg-surface px-4 py-4 text-[15px] text-ink-2">

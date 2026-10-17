@@ -2,6 +2,7 @@ import "server-only";
 import { sql } from "@/lib/db/client";
 import { insertActivity } from "@/lib/db/queries/activity";
 import { maybeLevelUp } from "@/lib/db/queries/levels";
+import { notifyCircle, type SmsRecipient } from "@/lib/db/queries/notifications";
 import { wishVisibleTo } from "@/lib/db/queries/visibility";
 import type { CardRow, Category, Role, Visibility } from "@/lib/db/types";
 
@@ -15,7 +16,7 @@ export async function createCard(input: {
   story: string;
   place: string | null;
   mediaIds: string[];
-}): Promise<CardRow> {
+}): Promise<CardRow & { sms: SmsRecipient[] }> {
   return sql.begin(async (tx) => {
     const [card] = await tx<CardRow[]>`
       insert into cards (wish_id, circle_id, author_id, category, title, body, story, place)
@@ -42,7 +43,15 @@ export async function createCard(input: {
       refId: card!.id,
       payload: { title: input.title, wish: input.wish?.text ?? null },
     });
-    return card!;
+    const sms = await notifyCircle(tx, {
+      circleId: input.circleId,
+      actorId: input.authorId,
+      wishId: input.wish?.id ?? null,
+      kind: input.wish ? "card" : "memory",
+      title: input.title,
+      url: `/cards/${card!.id}`,
+    });
+    return Object.assign(card!, { sms });
   });
 }
 
@@ -55,9 +64,6 @@ export type CardDetail = CardRow & {
   viewer_ids: string[];
   photo_ids: string[];
   recordings: { id: string; kind: "voice" | "video"; duration_sec: number | null; uploader_id: string | null; uploader_name: string | null }[];
-  like_count: number;
-  liked_by_me: boolean;
-  liker_names: string[];
   messages: { id: string; author_id: string; author_name: string | null; text: string; created_at: string }[];
 };
 
@@ -72,11 +78,6 @@ export async function findCardForMember(cardId: string, viewerId: string): Promi
                   'uploader_id', md.uploader_id, 'uploader_name', uu.name) order by md.created_at)
                 from media md left join users uu on uu.id = md.uploader_id
                 where md.card_id = c.id and md.kind <> 'photo'), '[]') as recordings,
-      (select count(*)::int from card_likes l where l.card_id = c.id) as like_count,
-      exists (select 1 from card_likes l where l.card_id = c.id and l.user_id = ${viewerId}) as liked_by_me,
-      coalesce((select array_agg(x.name) from (
-        select u.name from card_likes l join users u on u.id = l.user_id
-        where l.card_id = c.id and l.user_id <> ${viewerId} order by l.created_at desc limit 2) x), '{}') as liker_names,
       coalesce((select json_agg(json_build_object('id', cm.id, 'author_id', cm.author_id, 'author_name', mu.name,
                   'text', cm.text, 'created_at', cm.created_at) order by cm.created_at)
                 from card_messages cm left join users mu on mu.id = cm.author_id where cm.card_id = c.id), '[]') as messages
@@ -95,10 +96,6 @@ export async function updateCardWords(cardId: string, authorId: string, title: s
   return row ?? null;
 }
 
-export async function setLike(cardId: string, userId: string, liked: boolean): Promise<void> {
-  if (liked) await sql`insert into card_likes (card_id, user_id) values (${cardId}, ${userId}) on conflict do nothing`;
-  else await sql`delete from card_likes where card_id = ${cardId} and user_id = ${userId}`;
-}
 
 export async function addMessage(
   card: Pick<CardDetail, "id" | "circle_id" | "wish_id" | "title">,
@@ -172,4 +169,42 @@ export async function listCardsForExport(circleId: string, viewerId: string): Pr
     left join wishes w on w.id = c.wish_id
     left join users u on u.id = c.author_id
     where c.circle_id = ${circleId} and (w.id is null or ${wishVisibleTo(viewerId)})`;
+}
+
+/** Turns the public share link on (keeping an existing token) or off. Author only. */
+export async function setCardShare(cardId: string, authorId: string, token: string | null): Promise<string | null | undefined> {
+  const [row] = await sql<{ share_token: string | null }[]>`
+    update cards
+    set share_token = case when ${token}::text is null then null else coalesce(share_token, ${token}) end,
+        shared_at = case when ${token}::text is null then null else coalesce(shared_at, now()) end
+    where id = ${cardId} and author_id = ${authorId}
+    returning share_token`;
+  return row ? row.share_token : undefined;
+}
+
+export type SharedCard = Pick<CardRow, "id" | "title" | "body" | "category" | "happened_on" | "place" | "level"> & {
+  patient_name: string;
+  photo_ids: string[];
+  recordings: { id: string; kind: "voice" | "video" }[];
+};
+
+/** What a public share link shows: the card itself and nothing else from the circle. */
+export async function findSharedCard(token: string): Promise<SharedCard | null> {
+  const [row] = await sql<SharedCard[]>`
+    select c.id, c.title, c.body, c.category, c.happened_on, c.place, c.level, ci.patient_name,
+      coalesce((select array_agg(m.id order by (m.id = c.cover_media_id) desc, m.created_at)
+                from media m where m.card_id = c.id and m.kind = 'photo'), '{}') as photo_ids,
+      coalesce((select json_agg(json_build_object('id', m.id, 'kind', m.kind) order by m.created_at)
+                from media m where m.card_id = c.id and m.kind <> 'photo'), '[]') as recordings
+    from cards c join circles ci on ci.id = c.circle_id
+    where c.share_token = ${token}`;
+  return row ?? null;
+}
+
+/** Storage path of a media item on a shared card, or null. */
+export async function findSharedMediaPath(token: string, mediaId: string): Promise<string | null> {
+  const [row] = await sql<{ path: string }[]>`
+    select m.path from media m join cards c on c.id = m.card_id
+    where c.share_token = ${token} and m.id = ${mediaId}`;
+  return row?.path ?? null;
 }

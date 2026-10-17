@@ -17,7 +17,7 @@ export function MobilityPicker({ value, onChange }: { value: Mobility; onChange:
             onClick={() => onChange(m)}
             className={clsx(
               "h-11 rounded-[22px] border-[1.5px] px-3.5 text-[15px]",
-              on ? "border-primary bg-primary font-bold text-white" : "border-field bg-surface text-ink",
+              on ? "border-primary bg-cta font-bold text-cta-ink" : "border-field bg-surface text-ink",
             )}
           >
             {MOBILITY_LABEL[m]}

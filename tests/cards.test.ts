@@ -84,18 +84,11 @@ d("cards and media", async () => {
     expect(await media.findMediaPathForMember(p, ids.tom)).toBeNull();
   });
 
-  it("likes are per person and idempotent; messages post to the feed", async () => {
+  it("messages show on the card and post to the feed", async () => {
     const card = await cards.createCard({
       circleId, authorId: ids.owner, wish: null, category: "nature", title: "Jacarandas", body: "B", story: "S", place: null, mediaIds: [],
     });
-    await cards.setLike(card.id, ids.tom, true);
-    await cards.setLike(card.id, ids.tom, true);
-    await cards.setLike(card.id, ids.owner, true);
-    await cards.setLike(card.id, ids.owner, false);
     const detail = (await cards.findCardForMember(card.id, ids.owner))!;
-    expect(detail.like_count).toBe(1);
-    expect(detail.liked_by_me).toBe(false);
-    expect(detail.liker_names).toEqual(["tom"]);
     await cards.addMessage(detail, ids.tom, "Lovely");
     const after = (await cards.findCardForMember(card.id, ids.owner))!;
     expect(after.messages.map((m) => m.text)).toEqual(["Lovely"]);

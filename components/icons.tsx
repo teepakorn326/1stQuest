@@ -1,4 +1,4 @@
-// Line icons from the Wish Circle design (24px grid, 1.8 stroke).
+// Line icons from the 1stQuest design (24px grid, 1.8 stroke).
 type P = { size?: number; className?: string };
 const base = (size = 24) => ({
   width: size,
@@ -94,4 +94,7 @@ export const VideoIcon = ({ size, className }: P) => (
 );
 export const ExportIcon = ({ size, className }: P) => (
   <svg {...base(size)} className={className}><path d="M12 4v11M7.5 8.5L12 4l4.5 4.5" /><path d="M5 14v5h14v-5" /></svg>
+);
+export const BellIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>
 );

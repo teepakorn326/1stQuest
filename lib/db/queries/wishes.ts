@@ -1,6 +1,7 @@
 import "server-only";
 import { sql, type Tx } from "@/lib/db/client";
 import { insertActivity } from "@/lib/db/queries/activity";
+import { notifyCircle, type SmsRecipient } from "@/lib/db/queries/notifications";
 import type { Category, Mobility, PlanRow, QuestStatus, Role, Visibility, WishRow } from "@/lib/db/types";
 
 export type WishSummary = {
@@ -90,7 +91,7 @@ async function wishActivity(tx: Tx, circleId: string, actorId: string, wishId: s
   });
 }
 
-export async function createWish(circleId: string, authorId: string, w: WishInput): Promise<WishRow> {
+export async function createWish(circleId: string, authorId: string, w: WishInput): Promise<WishRow & { sms: SmsRecipient[] }> {
   return sql.begin(async (tx) => {
     const [wish] = await tx<WishRow[]>`
       insert into wishes (circle_id, author_id, text, category, visibility)
@@ -98,12 +99,13 @@ export async function createWish(circleId: string, authorId: string, w: WishInpu
       returning *`;
     await setViewers(tx, wish!.id, circleId, w.visibility, w.viewerIds);
     await wishActivity(tx, circleId, authorId, wish!.id, w);
-    return wish!;
+    const sms = await notifyCircle(tx, { circleId, actorId: authorId, wishId: wish!.id, kind: "wish", title: w.text, url: `/wishes/${wish!.id}` });
+    return Object.assign(wish!, { sms });
   });
 }
 
 /** Author edits. Widening from private posts the feed entry the circle never got. */
-export async function updateWish(wishId: string, authorId: string, w: WishInput): Promise<WishRow | null> {
+export async function updateWish(wishId: string, authorId: string, w: WishInput): Promise<(WishRow & { sms: SmsRecipient[] }) | null> {
   return sql.begin(async (tx) => {
     const [before] = await tx<WishRow[]>`select * from wishes where id = ${wishId} and author_id = ${authorId} for update`;
     if (!before) return null;
@@ -117,10 +119,12 @@ export async function updateWish(wishId: string, authorId: string, w: WishInput)
     } else {
       await tx`update quests set status = 'open', updated_at = now() where wish_id = ${wishId} and status = 'locked'`;
     }
+    let sms: SmsRecipient[] = [];
     if (before.visibility === "private" && w.visibility !== "private") {
       await wishActivity(tx, before.circle_id, authorId, wishId, w);
+      sms = await notifyCircle(tx, { circleId: before.circle_id, actorId: authorId, wishId, kind: "wish", title: w.text, url: `/wishes/${wishId}` });
     }
-    return wish!;
+    return Object.assign(wish!, { sms });
   });
 }
 
@@ -162,7 +166,7 @@ export async function savePlan(input: {
   actorId: string;
   mobility: Mobility;
   output: { plan: string; needsCareTeam: boolean; careTeamNote: string | null; quests: { title: string; needsCareTeam: boolean }[] };
-}): Promise<PlanRow> {
+}): Promise<PlanRow & { sms: SmsRecipient[] }> {
   const { wish, output } = input;
   return sql.begin(async (tx) => {
     const [plan] = await tx<PlanRow[]>`
@@ -190,6 +194,7 @@ export async function savePlan(input: {
         payload: { wish: wish.text },
       });
     }
-    return plan!;
+    const sms = await notifyCircle(tx, { circleId: wish.circle_id, actorId: input.actorId, wishId: wish.id, kind: "plan", title: wish.text, url: `/wishes/${wish.id}` });
+    return Object.assign(plan!, { sms });
   });
 }

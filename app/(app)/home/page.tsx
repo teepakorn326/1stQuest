@@ -15,6 +15,8 @@ import { listMyCircles } from "@/lib/db/queries/circles";
 import { listVisibleWishes } from "@/lib/db/queries/wishes";
 import { listRecentCards } from "@/lib/db/queries/cards";
 import { MemorialHome } from "@/components/MemorialHome";
+import { NotificationBell } from "@/components/NotificationBell";
+import { countUnread } from "@/lib/db/queries/notifications";
 import { WishRow } from "@/components/WishRow";
 
 export const dynamic = "force-dynamic";
@@ -45,11 +47,15 @@ export default async function HomePage() {
     return (
       <>
         <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
-        <MemorialHome name={circle.patient_name} photoSrc={photoSrc0} cards={await listRecentCards(circle.id, user.id)} />
+        <div className="absolute top-4 right-5 z-10">
+          <NotificationBell unread={await countUnread(user.id)} />
+        </div>
+        <MemorialHome name={circle.patient_name} photoSrc={photoSrc0} cards={await listRecentCards(circle.id, user.id)} canPost={circle.role === "owner"} />
       </>
     );
   }
 
+  const unread = await countUnread(user.id);
   const [circles, wishes, feed] = await Promise.all([
     listMyCircles(user.id),
     listVisibleWishes(circle.id, user.id, 5),
@@ -61,11 +67,12 @@ export default async function HomePage() {
     <main className="flex flex-col gap-5 px-5 pt-6 pb-5">
       <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
       <header className="flex items-center gap-3.5">
-        <Avatar name={circle.patient_name} seed="patient" size={56} src={photoSrc} tone="bg-[#C7DCEE] text-primary" />
+        <Avatar name={circle.patient_name} seed="patient" size={56} src={photoSrc} tone="bg-[#FFE3B8] text-primary" />
         <div className="flex flex-1 flex-col gap-0.5">
           <Greeting name={user.name ?? ""} />
           <CircleSwitcher current={circle} circles={circles.map((c) => ({ id: c.id, patient_name: c.patient_name }))} />
         </div>
+        <NotificationBell unread={unread} />
       </header>
 
       <MobilityCard
@@ -75,15 +82,19 @@ export default async function HomePage() {
         canEdit={canEditCircle({ userId: user.id, role: circle.role })}
       />
 
-      <ButtonLink href="/wishes/new" className="h-14">
-        <PlusIcon size={22} /> Add a wish
-      </ButtonLink>
+      {circle.role === "owner" && (
+        <ButtonLink href="/wishes/new" className="h-14">
+          <PlusIcon size={22} /> Add a wish
+        </ButtonLink>
+      )}
 
       <section className="flex flex-col gap-2.5">
         <h2 className="m-0 text-lg font-bold">Wishes we’re working on</h2>
         {wishes.length === 0 ? (
           <p className="m-0 rounded-[14px] border border-dashed border-accent bg-surface px-4 py-4 text-[15px] text-ink-2">
-            No wishes yet. There’s no rush. Add one whenever something comes to mind.
+            {circle.role === "owner"
+              ? "No wishes yet. There’s no rush. Add one whenever something comes to mind."
+              : `No wishes shared yet. When ${circle.patient_name}’s owner adds one, it shows up here.`}
           </p>
         ) : (
           wishes.map((w) => <WishRow key={w.id} wish={w} />)

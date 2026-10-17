@@ -40,7 +40,7 @@ export default async function InvitePage() {
           <h2 className="m-0 text-base font-bold">In the circle</h2>
           <ul className="m-0 flex list-none flex-col rounded-[14px] border border-line bg-surface p-0">
             {members.map((m, i) => (
-              <li key={m.user_id} className={`flex items-center gap-3 px-3.5 py-3 ${i < members.length - 1 ? "border-b border-[#E6EEF4]" : ""}`}>
+              <li key={m.user_id} className={`flex items-center gap-3 px-3.5 py-3 ${i < members.length - 1 ? "border-b border-[#F6EBDA]" : ""}`}>
                 <Avatar name={m.name ?? m.email} seed={m.user_id} />
                 <span className="flex-1 text-base">
                   {m.name ?? m.email}

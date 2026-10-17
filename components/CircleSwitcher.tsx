@@ -47,7 +47,7 @@ export function CircleSwitcher({ current, circles }: { current: C; circles: C[] 
               type="button"
               onClick={() => choose(c.id)}
               className={clsx(
-                "flex min-h-12 w-full items-center border-b border-[#E6EEF4] px-4 text-left text-base",
+                "flex min-h-12 w-full items-center border-b border-[#F6EBDA] px-4 text-left text-base",
                 c.id === current.id ? "font-bold text-primary" : "text-ink",
               )}
             >

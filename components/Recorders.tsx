@@ -75,11 +75,11 @@ export function VoiceRecorder({ onDone, onCancel }: { onDone: (r: Recording) => 
       )}
       <div className="flex gap-2">
         {state === "recording" ? (
-          <button type="button" onClick={() => rec.current?.stop()} className="h-12 flex-1 rounded-xl bg-primary font-bold text-white">
+          <button type="button" onClick={() => rec.current?.stop()} className="h-12 flex-1 rounded-xl bg-cta font-bold text-cta-ink">
             Stop
           </button>
         ) : (
-          <button type="button" onClick={start} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary font-bold text-white">
+          <button type="button" onClick={start} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-cta font-bold text-cta-ink">
             <MicIcon size={20} /> Record
           </button>
         )}

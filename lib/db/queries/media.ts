@@ -2,6 +2,7 @@ import "server-only";
 import { sql } from "@/lib/db/client";
 import { insertActivity } from "@/lib/db/queries/activity";
 import { maybeLevelUp } from "@/lib/db/queries/levels";
+import { notifyCircle, type SmsRecipient } from "@/lib/db/queries/notifications";
 import { wishVisibleTo } from "@/lib/db/queries/visibility";
 import type { MediaKind, MediaRow } from "@/lib/db/types";
 
@@ -37,7 +38,7 @@ export async function attachPhotosToCard(input: {
   cardTitle: string;
   actorId: string;
   mediaIds: string[];
-}): Promise<{ added: number; levelledUp: boolean }> {
+}): Promise<{ added: number; levelledUp: boolean; sms: SmsRecipient[] }> {
   return sql.begin(async (tx) => {
     const rows = await tx<{ id: string; kind: MediaKind }[]>`
       update media set card_id = ${input.cardId}
@@ -59,7 +60,11 @@ export async function attachPhotosToCard(input: {
         payload: { count: photos.length, kind: recordings[0]?.kind ?? null, wish: input.wishText ?? input.cardTitle },
       });
     }
-    return { added: rows.length, levelledUp: rows.length > 0 && (await maybeLevelUp(tx, input.cardId)) };
+    const sms =
+      rows.length > 0
+        ? await notifyCircle(tx, { circleId: input.circleId, actorId: input.actorId, wishId: input.wishId, kind: "media", title: input.cardTitle, url: `/cards/${input.cardId}` })
+        : [];
+    return { added: rows.length, levelledUp: rows.length > 0 && (await maybeLevelUp(tx, input.cardId)), sms };
   });
 }
 

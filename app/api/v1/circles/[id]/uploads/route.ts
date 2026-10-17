@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { readBody, route, notFound, HttpError } from "@/lib/http";
+import { readBody, route, forbidden, notFound, HttpError } from "@/lib/http";
+import { canPost, POST_FORBIDDEN } from "@/lib/authz";
 import { requireApiUser } from "@/lib/auth/session";
 import { findCircleForMember } from "@/lib/db/queries/circles";
 import { MAX_PHOTOS } from "@/lib/images";
@@ -25,6 +26,7 @@ export const POST = route<{ id: string }>(async (req, { params }) => {
   const user = await requireApiUser();
   const circle = await findCircleForMember(z.uuid().parse(params.id), user.id);
   if (!circle) throw notFound();
+  if (!canPost({ userId: user.id, role: circle.role })) throw forbidden(POST_FORBIDDEN);
   if (!storageConfigured()) throw new HttpError(503, "storage_unavailable", "Photo storage isn’t set up on this server.");
   const { files } = await readBody(req, Body);
   const slots = await Promise.all(

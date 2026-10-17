@@ -25,7 +25,7 @@ export const GET = route<{ id: string }>(async (req, { params, log }) => {
   const stream = await buildBookPdf({ patientName: circle.patient_name, cards, order, withQr, appUrl: appUrl() });
   log.info("book pdf", { circleId: circle.id, cards: cards.length, order, withQr, ms: Date.now() - started });
 
-  const file = `${circle.patient_name.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") || "wish-circle"}-book.pdf`;
+  const file = `${circle.patient_name.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") || "1stquest"}-book.pdf`;
   return new Response(stream, {
     headers: {
       "content-type": "application/pdf",

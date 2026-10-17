@@ -15,12 +15,12 @@ export class ResendEmailSender implements EmailSender {
     const { error } = await this.client.emails.send({
       from: this.from,
       to,
-      subject: "Your Wish Circle sign-in link",
-      text: `Tap to sign in to Wish Circle:\n\n${url}\n\nThis link works once and expires in 15 minutes. If you didn't ask for it, you can ignore this email.`,
-      html: `<div style="font-family:system-ui,sans-serif;font-size:17px;color:#1C2B3A;line-height:1.5">
-        <p>Tap to sign in to Wish Circle:</p>
-        <p><a href="${url}" style="display:inline-block;background:#2F6FA3;color:#fff;padding:14px 22px;border-radius:14px;text-decoration:none;font-weight:700">Sign in</a></p>
-        <p style="color:#5A6B7B;font-size:15px">This link works once and expires in 15 minutes. If you didn't ask for it, you can ignore this email.</p>
+      subject: "Your 1stQuest sign-in link",
+      text: `Tap to sign in to 1stQuest:\n\n${url}\n\nThis link works once and expires in 15 minutes. If you didn't ask for it, you can ignore this email.`,
+      html: `<div style="font-family:system-ui,sans-serif;font-size:17px;color:#33261A;line-height:1.5">
+        <p>Tap to sign in to 1stQuest:</p>
+        <p><a href="${url}" style="display:inline-block;background:#A86400;color:#fff;padding:14px 22px;border-radius:14px;text-decoration:none;font-weight:700">Sign in</a></p>
+        <p style="color:#7A6650;font-size:15px">This link works once and expires in 15 minutes. If you didn't ask for it, you can ignore this email.</p>
       </div>`,
     });
     if (error) throw new Error(`Resend: ${error.message}`);

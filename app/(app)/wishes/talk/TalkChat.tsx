@@ -36,7 +36,7 @@ function SuggestionCard({ s }: { s: Suggestion }) {
   const go = () => router.push(`/wishes/new?${new URLSearchParams({ text, category: s.category })}`);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border-[1.5px] border-[#A9C8E2] bg-primary-soft p-4" data-testid="suggestion">
+    <div className="flex flex-col gap-3 rounded-2xl border-[1.5px] border-[#EED8B5] bg-primary-soft p-4" data-testid="suggestion">
       <span className="text-sm font-bold text-primary-hover">This could be a wish</span>
       {editing ? (
         <textarea
@@ -45,20 +45,20 @@ function SuggestionCard({ s }: { s: Suggestion }) {
           rows={2}
           maxLength={500}
           aria-label="Edit the wish"
-          className="w-full resize-none rounded-xl border-[1.5px] border-[#A9C8E2] bg-surface px-3 py-2 text-[17px] font-bold"
+          className="w-full resize-none rounded-xl border-[1.5px] border-[#EED8B5] bg-surface px-3 py-2 text-[17px] font-bold"
         />
       ) : (
         <p className="m-0 text-[17px] leading-snug font-bold">{text}</p>
       )}
       <div className="flex gap-2">
-        <button type="button" onClick={go} className="h-12 flex-1 rounded-xl bg-primary text-base font-bold text-white">
+        <button type="button" onClick={go} className="h-12 flex-1 rounded-xl bg-cta text-base font-bold text-cta-ink">
           Save as a wish
         </button>
         {!editing && (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="h-12 rounded-xl border-[1.5px] border-[#A9C8E2] bg-surface px-4 text-base font-bold text-primary"
+            className="h-12 rounded-xl border-[1.5px] border-[#EED8B5] bg-surface px-4 text-base font-bold text-primary"
           >
             Edit
           </button>
@@ -166,7 +166,7 @@ export function TalkChat({ circleId, initial }: { circleId: string; initial: Msg
                 "max-w-[85%] px-4 py-3.5 text-[17px] leading-normal",
                 m.role === "assistant"
                   ? "self-start rounded-[18px_18px_18px_6px] border border-line bg-surface"
-                  : "self-end rounded-[18px_18px_6px_18px] bg-primary text-white",
+                  : "self-end rounded-[18px_18px_6px_18px] bg-cta text-cta-ink",
               )}
             >
               {m.content}
@@ -176,7 +176,7 @@ export function TalkChat({ circleId, initial }: { circleId: string; initial: Msg
         ))}
         {pending && (
           <>
-            <div className="max-w-[85%] self-end rounded-[18px_18px_6px_18px] bg-primary px-4 py-3.5 text-[17px] text-white">{pending}</div>
+            <div className="max-w-[85%] self-end rounded-[18px_18px_6px_18px] bg-cta px-4 py-3.5 text-[17px] text-cta-ink">{pending}</div>
             <div className="self-start rounded-[18px_18px_18px_6px] border border-line bg-surface px-4 py-3.5 text-ink-3" role="status">
               <span className="inline-flex gap-1" aria-label="Thinking">
                 <span className="h-2 w-2 animate-bounce rounded-full bg-accent" />
@@ -224,7 +224,7 @@ export function TalkChat({ circleId, initial }: { circleId: string; initial: Msg
               aria-pressed={listening}
               className={clsx(
                 "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
-                listening ? "animate-pulse bg-primary text-white" : "bg-primary-soft text-primary",
+                listening ? "animate-pulse bg-cta text-cta-ink" : "bg-primary-soft text-primary",
               )}
             >
               <MicIcon />
@@ -246,7 +246,7 @@ export function TalkChat({ circleId, initial }: { circleId: string; initial: Msg
             type="submit"
             aria-label="Send"
             disabled={!draft.trim() || Boolean(pending)}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-white disabled:opacity-50"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cta text-cta-ink disabled:opacity-50"
           >
             <SendIcon size={22} />
           </button>

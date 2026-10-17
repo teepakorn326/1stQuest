@@ -15,16 +15,16 @@ export function ExportForm({ circleId }: { circleId: string }) {
       <div className="flex flex-col gap-5 px-5 pt-2 pb-5">
         <div aria-hidden className="flex justify-center rounded-[18px] bg-tint py-5">
           <div className="flex h-[150px] w-[130px] flex-col gap-2 rounded-l-lg bg-surface p-3 shadow-[0_4px_12px_rgba(28,43,58,0.12)]">
-            <div className="h-[78px] rounded bg-[#A4C4DF]" />
+            <div className="h-[78px] rounded bg-[#FFD497]" />
             <div className="h-1.5 w-4/5 rounded bg-ink" />
-            <div className="h-[5px] w-[95%] rounded bg-[#C9D5DF]" />
-            <div className="h-[5px] w-[70%] rounded bg-[#C9D5DF]" />
+            <div className="h-[5px] w-[95%] rounded bg-[#EED8B5]" />
+            <div className="h-[5px] w-[70%] rounded bg-[#EED8B5]" />
           </div>
-          <div className="grid h-[150px] w-[130px] grid-cols-2 gap-1.5 rounded-r-lg border-l border-[#E6EEF4] bg-surface p-3 shadow-[0_4px_12px_rgba(28,43,58,0.12)]">
-            <div className="rounded bg-[#C7DCEE]" />
-            <div className="rounded bg-[#B5D0E7]" />
-            <div className="rounded bg-[#D6E6F3]" />
-            <div className="rounded bg-[#A4C4DF]" />
+          <div className="grid h-[150px] w-[130px] grid-cols-2 gap-1.5 rounded-r-lg border-l border-[#F6EBDA] bg-surface p-3 shadow-[0_4px_12px_rgba(28,43,58,0.12)]">
+            <div className="rounded bg-[#FFE3B8]" />
+            <div className="rounded bg-[#FFDFAE]" />
+            <div className="rounded bg-[#FFEACC]" />
+            <div className="rounded bg-[#FFD497]" />
           </div>
         </div>
 
@@ -81,7 +81,7 @@ export function ExportForm({ circleId }: { circleId: string }) {
           </label>
         )}
         {format === "pdf" && qr && (
-          <p className="m-0 -mt-3 text-sm text-ink-3">Scanning a code opens it in Wish Circle for people in the circle.</p>
+          <p className="m-0 -mt-3 text-sm text-ink-3">Scanning a code opens it in 1stQuest for people in the circle.</p>
         )}
       </div>
       <div className="sticky bottom-[76px] border-t border-line bg-bg px-5 pt-3 pb-4">
@@ -89,7 +89,7 @@ export function ExportForm({ circleId }: { circleId: string }) {
           <a
             href={pdfHref}
             download
-            className="flex min-h-[52px] w-full items-center justify-center rounded-[14px] bg-primary text-[17px] font-bold text-white no-underline hover:bg-primary-hover hover:text-white"
+            className="flex min-h-[52px] w-full items-center justify-center rounded-[14px] bg-cta text-[17px] font-bold text-cta-ink no-underline hover:bg-cta-hover hover:text-cta-ink"
             data-testid="create-pdf"
           >
             Create PDF

@@ -10,6 +10,9 @@ import { findCardForMember } from "@/lib/db/queries/cards";
 import { findCircleForMember } from "@/lib/db/queries/circles";
 import { realtimeConfig } from "@/lib/realtime";
 import { CardActions } from "./CardActions";
+import { ShareCard } from "./ShareCard";
+import { appUrl } from "@/lib/env";
+import { GoldCardFrame } from "@/components/GoldCardFrame";
 
 export const dynamic = "force-dynamic";
 
@@ -18,23 +21,24 @@ function PhotoGrid({ ids }: { ids: string[] }) {
   const [a, b, c] = ids;
   const src = (id: string) => `/api/v1/media/${id}`;
   return (
-    <div className="grid h-[180px] grid-cols-3 gap-[3px]" data-testid="card-photos">
-      <a href={src(a!)} target="_blank" rel="noreferrer" className={ids.length === 1 ? "col-span-3" : "col-span-2"}>
+    // Every cell is a fixed-height block that clips, so tall photos can't spill over the words below.
+    <div className="grid h-[200px] grid-cols-3 grid-rows-[minmax(0,1fr)] gap-[3px] overflow-hidden" data-testid="card-photos">
+      <a href={src(a!)} target="_blank" rel="noreferrer" className={`block h-full min-h-0 overflow-hidden ${ids.length === 1 ? "col-span-3" : "col-span-2"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src(a!)} alt="" className="h-full w-full object-cover" />
       </a>
       {b && (
-        <div className="grid gap-[3px]">
-          <a href={src(b)} target="_blank" rel="noreferrer" className={c ? "" : "row-span-2"}>
+        <div className="grid h-full min-h-0 grid-rows-[repeat(2,minmax(0,1fr))] gap-[3px]">
+          <a href={src(b)} target="_blank" rel="noreferrer" className={`block min-h-0 overflow-hidden ${c ? "" : "row-span-2"}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={src(b)} alt="" className="h-full w-full object-cover" />
           </a>
           {c && (
-            <a href={src(c)} target="_blank" rel="noreferrer" className="relative">
+            <a href={src(c)} target="_blank" rel="noreferrer" className="relative block min-h-0 overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src(c)} alt="" className="h-full w-full object-cover" />
               {ids.length > 3 && (
-                <span className="absolute inset-0 flex items-center justify-center bg-[#1F527D]/55 text-[15px] font-bold text-white">
+                <span className="absolute inset-0 flex items-center justify-center bg-[#8A5300]/55 text-[15px] font-bold text-white">
                   +{ids.length - 3}
                 </span>
               )}
@@ -78,21 +82,18 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
       </header>
 
       <div className="flex flex-col gap-3 px-5 pt-1.5 pb-5">
-        <article
-          className={`flex flex-col overflow-hidden rounded-[20px] border-4 bg-surface ${card.level > 0 ? "border-gold" : "border-[#BFD8EE]"}`}
-          data-level={card.level}
-        >
+        <GoldCardFrame cardId={card.id} level={card.level}>
           <PhotoGrid ids={card.photo_ids} />
           <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3">
             <h1 className="m-0 text-xl leading-tight font-bold">{card.title}</h1>
-            <p className="m-0 text-[15px] leading-normal text-[#33475A]">{card.body}</p>
+            <p className="m-0 text-[15px] leading-normal text-[#4A3926]">{card.body}</p>
             <p className="m-0 text-sm text-ink-3">
               {credit}
               {card.place ? ` · ${card.place}` : ""} ·{" "}
               {card.happened_on.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}
             </p>
             {card.recordings.map((r) => (
-              <div key={r.id} className="flex flex-col gap-1.5 rounded-[14px] bg-[#EEF4F9] p-2.5" data-testid="recording">
+              <div key={r.id} className="flex flex-col gap-1.5 rounded-[14px] bg-[#FFF7EA] p-2.5" data-testid="recording">
                 <span className="text-sm text-ink-2">
                   {r.kind === "voice" ? "Voice note" : "Video"} from {r.uploader_id === user.id ? "you" : (r.uploader_name ?? "someone")}
                   {r.duration_sec ? ` · ${Math.floor(r.duration_sec / 60)}:${String(r.duration_sec % 60).padStart(2, "0")}` : ""}
@@ -113,14 +114,15 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
           <CardActions
             cardId={card.id}
             circleId={card.circle_id}
-            liked={card.liked_by_me}
-            likes={card.like_count}
-            likerNames={card.liker_names}
             messageCount={card.messages.length}
+            canPost={card.viewer_role === "owner"}
             storage={realtimeConfig()}
           />
-        </article>
+        </GoldCardFrame>
 
+        {card.viewer_role === "owner" && card.author_id === user.id && (
+          <ShareCard cardId={card.id} title={card.title} initialUrl={card.share_token ? `${appUrl()}/s/${card.share_token}` : null} />
+        )}
         <section className="flex flex-col gap-2" data-testid="messages">
           <h2 className="m-0 text-base font-bold">Messages for {patient}</h2>
           {card.messages.length === 0 && <p className="m-0 text-[15px] text-ink-3">No messages yet. Be the first to leave one.</p>}

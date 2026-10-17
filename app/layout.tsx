@@ -10,14 +10,14 @@ const atkinson = Atkinson_Hyperlegible({
 });
 
 export const metadata: Metadata = {
-  title: "Wish Circle",
+  title: "1stQuest",
   description: "A shared place for one person’s wishes, and the people who help make them happen.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#F4F8FB",
+  themeColor: "#FFFAF3",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -76,7 +76,7 @@ export function PlanPanel({ wishId, plan, canPlan }: { wishId: string; plan: Pla
             </button>
           )}
         </div>
-        <p className="m-0 text-base text-[#33475A]">{plan.text}</p>
+        <p className="m-0 text-base text-[#4A3926]">{plan.text}</p>
         <span className="text-sm text-ink-3">Planned for: {plan.mobilityLabel}</span>
       </section>
       {errorBox}

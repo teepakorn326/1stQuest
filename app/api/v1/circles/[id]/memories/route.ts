@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { readBody, route, notFound, badRequest, conflict, HttpError } from "@/lib/http";
+import { readBody, route, forbidden, notFound, badRequest, conflict, HttpError } from "@/lib/http";
+import { canPost, POST_FORBIDDEN } from "@/lib/authz";
 import { requireApiUser } from "@/lib/auth/session";
 import { AiError } from "@/lib/ai";
 import { photosForModel, writeCard } from "@/lib/cards";
@@ -9,6 +10,7 @@ import { createCard } from "@/lib/db/queries/cards";
 import { findMediaByIds } from "@/lib/db/queries/media";
 import { CATEGORIES, type Category } from "@/lib/db/types";
 import { MAX_PHOTOS } from "@/lib/images";
+import { queueTexts, textFor } from "@/lib/notify";
 
 export const maxDuration = 60;
 
@@ -23,6 +25,7 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
   const user = await requireApiUser();
   const circle = await findCircleForMember(z.uuid().parse(params.id), user.id);
   if (!circle) throw notFound();
+  if (!canPost({ userId: user.id, role: circle.role })) throw forbidden(POST_FORBIDDEN);
   if (circle.mode !== "memorial") throw conflict("Memories are shared once the book is a memorial album. Add moments to a wish instead.");
   const { category, story, mediaIds } = await readBody(req, Body);
 
@@ -50,6 +53,7 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
       place: words.place?.slice(0, 40) ?? null,
       mediaIds: ordered.map((m) => m.id),
     });
+    queueTexts(card.sms, textFor({ kind: "memory", actorName: user.name ?? "The owner", patientName: circle.patient_name, title: card.title, path: `/cards/${card.id}` }));
     return NextResponse.json({ card: { id: card.id } }, { status: 201 });
   } catch (err) {
     if (err instanceof AiError) {

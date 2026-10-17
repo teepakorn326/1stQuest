@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { readBody, route, notFound, HttpError } from "@/lib/http";
+import { readBody, route, forbidden, notFound, HttpError } from "@/lib/http";
+import { canPost, POST_FORBIDDEN } from "@/lib/authz";
 import { requireApiUser } from "@/lib/auth/session";
 import { ai, AiError } from "@/lib/ai";
 import { talkOpener } from "@/lib/ai/prompts/talk";
@@ -15,6 +16,7 @@ const Body = z.object({ text: z.string().trim().min(1).max(2000) });
 async function load(id: string, userId: string) {
   const circle = await findCircleForMember(z.uuid().parse(id), userId);
   if (!circle) throw notFound();
+  if (!canPost({ userId, role: circle.role })) throw forbidden(POST_FORBIDDEN);
   return circle;
 }
 

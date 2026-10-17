@@ -18,6 +18,8 @@ export interface UserRow {
   email: string;
   name: string | null;
   password_hash: string | null;
+  phone: string | null;
+  sms_opt_in: boolean;
   created_at: Date;
 }
 
@@ -118,6 +120,8 @@ export interface CardRow {
   happened_on: Date;
   cover_media_id: string | null;
   level: number;
+  share_token: string | null;
+  shared_at: Date | null;
   created_at: Date;
 }
 
@@ -172,5 +176,17 @@ export interface ConversationMessageRow {
   role: "user" | "assistant";
   content: string;
   suggestion: { text: string; category: Category } | null;
+  created_at: Date;
+}
+
+export interface NotificationRow {
+  id: string;
+  user_id: string;
+  circle_id: string;
+  actor_id: string | null;
+  kind: string;
+  title: string;
+  url: string;
+  read_at: Date | null;
   created_at: Date;
 }

@@ -6,7 +6,7 @@ import { AlertIcon, CheckIcon, LockIcon } from "@/components/icons";
 import type { QuestStatus } from "@/lib/db/types";
 
 const STATUS = {
-  done: { label: "Done", className: "bg-primary text-white" },
+  done: { label: "Done", className: "bg-cta text-cta-ink" },
   in_progress: { label: "In progress", className: "bg-primary-soft text-primary-hover" },
   open: { label: "Open", className: "bg-tint text-ink-2" },
   locked: { label: "Locked", className: "bg-tint text-ink-3" },
@@ -87,7 +87,7 @@ export function QuestItem({ q }: { q: QuestView }) {
       {(q.can.done || q.can.release) && (
         <div className="flex gap-2">
           {q.can.done && (
-            <button type="button" disabled={busy} onClick={() => act("done")} className="h-11 flex-1 rounded-xl bg-primary text-[15px] font-bold text-white disabled:opacity-60">
+            <button type="button" disabled={busy} onClick={() => act("done")} className="h-11 flex-1 rounded-xl bg-cta text-[15px] font-bold text-cta-ink disabled:opacity-60">
               Mark done
             </button>
           )}

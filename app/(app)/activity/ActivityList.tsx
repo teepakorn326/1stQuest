@@ -57,7 +57,7 @@ export function ActivityList({ circleId, viewerId, filter, initial }: { circleId
             replace
             className={clsx(
               "flex h-10 items-center rounded-[20px] px-4 text-[15px] no-underline",
-              f.key === filter ? "bg-primary font-bold text-white hover:text-white" : "border-[1.5px] border-field bg-surface text-ink hover:text-ink",
+              f.key === filter ? "bg-cta font-bold text-cta-ink hover:text-cta-ink" : "border-[1.5px] border-field bg-surface text-ink hover:text-ink",
             )}
           >
             {f.label}
@@ -77,7 +77,7 @@ export function ActivityList({ circleId, viewerId, filter, initial }: { circleId
                 const context = activityContext(a);
                 const name = a.actor_id === viewerId ? "You" : (a.actor_name ?? "Someone");
                 return (
-                  <li key={a.id} className={clsx("flex gap-3 px-4 py-3.5", i < g.items.length - 1 && "border-b border-[#E6EEF4]")}>
+                  <li key={a.id} className={clsx("flex gap-3 px-4 py-3.5", i < g.items.length - 1 && "border-b border-[#F6EBDA]")}>
                     <Avatar name={a.actor_name ?? a.actor_email} seed={a.actor_id ?? a.id} size={40} />
                     <div className="flex flex-col gap-0.5">
                       <span className="text-base leading-snug">

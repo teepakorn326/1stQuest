@@ -48,7 +48,7 @@ export function InvitePanel({ patientName, options }: { patientName: string; opt
         </div>
         <p className="mt-2.5 mb-0 text-sm text-ink-3">
           {role === "family"
-            ? `They can see shared wishes, take quests and add to cards. ${patientName} decides who sees each wish.`
+            ? `They can see shared wishes, take quests and leave messages on cards. The owner posts wishes and cards.`
             : `Doctors see the wishes ${patientName} shares with the circle and can take quests, like the ones marked for the care team.`}
         </p>
       </fieldset>
@@ -76,7 +76,7 @@ export function InvitePanel({ patientName, options }: { patientName: string; opt
             data-testid="invite-link"
             className="h-[52px] min-w-0 flex-1 rounded-[14px] border-[1.5px] border-field bg-surface px-3.5 text-base text-ink"
           />
-          <button type="button" onClick={copy} className="h-[52px] rounded-[14px] bg-primary px-[18px] text-base font-bold text-white">
+          <button type="button" onClick={copy} className="h-[52px] rounded-[14px] bg-cta px-[18px] text-base font-bold text-cta-ink">
             {copied ? "Copied" : "Copy"}
           </button>
         </div>

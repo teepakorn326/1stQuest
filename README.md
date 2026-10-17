@@ -1,4 +1,4 @@
-# Wish Circle
+# 1stQuest
 
 A shared place for one person’s wishes, and the people who help make them happen. Family, friends and a doctor join a circle around one person, record wishes, plan them together, and keep memory cards in a shared book.
 
@@ -77,7 +77,10 @@ To keep `pnpm migrate`/`seed` pointed at Supabase but run `pnpm dev` on PGlite, 
 | `ANTHROPIC_API_KEY` | yes | “Talk it through”, plans and card text. |
 | `APP_URL` | optional | Public origin for links in emails and QR codes. Defaults to Vercel’s production domain. |
 | `RESEND_API_KEY` | for email | Resend API key. |
-| `EMAIL_FROM` | for email | e.g. `Wish Circle <hello@yourdomain>` (domain verified in Resend). Unset = dev sign-in mode. |
+| `EMAIL_FROM` | for email | e.g. `1stQuest <hello@yourdomain>` (domain verified in Resend). Unset = dev sign-in mode. |
+| `CLICKSEND_USERNAME` | for texts | ClickSend account username. With the API key unset, texts run in dev mode (logged, not sent). |
+| `CLICKSEND_API_KEY` | for texts | ClickSend API key. |
+| `CLICKSEND_FROM` | optional | Sender ID or number shown on texts. |
 | `ANTHROPIC_MODEL` | optional | Override the plan/card model (default `claude-sonnet-5-5`). Chat always uses `claude-haiku-5-5`. |
 | `DB_POOL_MAX` | local only | `1` for PGlite. Ignored on Vercel (always 1). |
 | `TEST_DATABASE_URL` | tests | Database for DB-backed tests (local PGlite). Those tests are skipped when it’s unset, so they never touch the app database. |

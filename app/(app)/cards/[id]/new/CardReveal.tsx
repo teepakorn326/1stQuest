@@ -58,7 +58,7 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
   }
 
   return (
-    <main className="relative -mb-[96px] flex min-h-dvh flex-col items-center gap-6 overflow-hidden bg-[#22374A] px-6 pt-10 pb-[112px] text-white">
+    <main className="relative -mb-[96px] flex min-h-dvh flex-col items-center gap-6 overflow-hidden bg-[#3A2410] px-6 pt-10 pb-[112px] text-white">
       {SPARKLES.map((sp, i) => (
         <span
           key={i}
@@ -72,7 +72,7 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
 
       <div className="flex flex-col items-center gap-1.5 text-center">
         <h1 className="m-0 text-2xl font-bold">{saved ? `Added to ${book}` : "A new card for the book"}</h1>
-        <p className="m-0 text-base text-[#C9D8E5]">{saved ? card.wishText : card.credit}</p>
+        <p className="m-0 text-base text-[#F3DEC0]">{saved ? card.wishText : card.credit}</p>
       </div>
 
       <div className="relative flex min-h-[300px] w-[290px] items-center justify-center">
@@ -81,7 +81,7 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
             <div className="reveal-stage">
               <div className="reveal-card">
                 <CardFace title={title} body={body} category={card.category} coverId={card.coverId} dateLabel={card.dateLabel} />
-                <div className="reveal-face reveal-back flex items-center justify-center rounded-[20px] border-[3px] border-[#BFD8EE] bg-primary" aria-hidden>
+                <div className="reveal-face reveal-back flex items-center justify-center rounded-[20px] border-[3px] border-[#F3E2C6] bg-cta" aria-hidden>
                   <div className="flex h-[340px] w-[200px] items-center justify-center rounded-[14px] border-2 border-accent text-primary-soft">
                     <BookIcon size={48} />
                   </div>
@@ -117,7 +117,7 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
               className="resize-none rounded-[14px] border-[1.5px] border-field px-3 py-2 text-[15px] leading-relaxed"
             />
             {error && <p className="m-0 text-sm text-warm-ink">{error}</p>}
-            <button type="submit" className="h-12 rounded-[14px] bg-primary font-bold text-white">
+            <button type="submit" className="h-12 rounded-[14px] bg-cta font-bold text-cta-ink">
               Save the words
             </button>
             <button type="button" onClick={() => setEditing(false)} className="h-11 font-bold text-primary">
@@ -132,7 +132,7 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
               <CheckIcon size={34} />
             </div>
             <p className="m-0 text-xl font-bold">Saved in {CATEGORY_LABEL[card.category]}</p>
-            <p className="m-0 max-w-[250px] text-base text-[#C9D8E5]">The family can now like it and leave messages.</p>
+            <p className="m-0 max-w-[250px] text-base text-[#F3DEC0]">The family can now like it and leave messages.</p>
           </div>
         )}
       </div>
@@ -152,7 +152,7 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
               Add to the book
             </button>
             {card.canEdit && (
-              <button type="button" onClick={() => setEditing(true)} className="h-[52px] rounded-[14px] border-[1.5px] border-[#6F8BA3] text-[17px] font-bold text-white">
+              <button type="button" onClick={() => setEditing(true)} className="h-[52px] rounded-[14px] border-[1.5px] border-[#A0784A] text-[17px] font-bold text-white">
                 Change the words
               </button>
             )}
@@ -169,7 +169,7 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
                 setPhase("reset");
                 later(() => setPhase("reveal"), 40);
               }}
-              className="h-[52px] rounded-[14px] border-[1.5px] border-[#6F8BA3] text-[17px] font-bold text-white"
+              className="h-[52px] rounded-[14px] border-[1.5px] border-[#A0784A] text-[17px] font-bold text-white"
             >
               Play again
             </button>
@@ -179,7 +179,7 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
           <Link
             href="/book"
             aria-label={book}
-            className={`flex h-14 w-14 items-center justify-center rounded-2xl border-[1.5px] border-[#4C6A84] bg-[#2F4A61] text-primary-soft hover:text-primary-soft ${saved ? "reveal-bump" : ""}`}
+            className={`flex h-14 w-14 items-center justify-center rounded-2xl border-[1.5px] border-[#7A5426] bg-[#5C3B12] text-primary-soft hover:text-primary-soft ${saved ? "reveal-bump" : ""}`}
           >
             <BookIcon size={28} />
           </Link>

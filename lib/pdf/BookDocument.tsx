@@ -18,15 +18,15 @@ export type PdfPage = {
   qrs: { image: string; caption: string }[];
 };
 
-const INK = "#1C2B3A";
-const INK3 = "#5A6B7B";
-const PRIMARY = "#1F527D";
-const LINE = "#D5E2EC";
-const GOLD = "#C49A3A";
+const INK = "#33261A";
+const INK3 = "#7A6650";
+const PRIMARY = "#8A5300";
+const LINE = "#F3E2C6";
+const GOLD = "#D99A1E";
 
 const s = StyleSheet.create({
   page: { padding: 40, fontFamily: "Helvetica", color: INK, backgroundColor: "#FFFFFF" },
-  cover: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F4F8FB", padding: 40 },
+  cover: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FFFAF3", padding: 40 },
   coverKicker: { fontSize: 13, color: INK3, marginBottom: 10 },
   coverTitle: { fontSize: 34, fontFamily: "Helvetica-Bold", textAlign: "center" },
   coverSub: { fontSize: 13, color: INK3, marginTop: 14, textAlign: "center" },
@@ -35,7 +35,7 @@ const s = StyleSheet.create({
   photoSmall: { flex: 1, height: 120, objectFit: "cover", borderRadius: 6 },
   meta: { fontSize: 10, color: PRIMARY, fontFamily: "Helvetica-Bold", marginTop: 18, textTransform: "uppercase", letterSpacing: 1 },
   title: { fontSize: 22, fontFamily: "Helvetica-Bold", marginTop: 6, lineHeight: 1.25 },
-  body: { fontSize: 12.5, lineHeight: 1.6, marginTop: 10, color: "#33475A" },
+  body: { fontSize: 12.5, lineHeight: 1.6, marginTop: 10, color: "#4A3926" },
   credit: { fontSize: 10, color: INK3, marginTop: 12 },
   qrRow: { flexDirection: "row", gap: 16, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: LINE },
   qrBox: { width: 110, alignItems: "center" },
@@ -47,10 +47,10 @@ const s = StyleSheet.create({
 
 export function BookDocument({ patientName, subtitle, pages }: { patientName: string; subtitle: string; pages: PdfPage[] }) {
   return (
-    <Document title={`${patientName}’s book`} author="Wish Circle" creator="Wish Circle">
+    <Document title={`${patientName}’s book`} author="1stQuest" creator="1stQuest">
       <Page size="A4" style={{ fontFamily: "Helvetica" }}>
         <View style={s.cover}>
-          <Text style={s.coverKicker}>Wish Circle</Text>
+          <Text style={s.coverKicker}>1stQuest</Text>
           <Text style={s.coverTitle}>{patientName}’s book</Text>
           <Text style={s.coverSub}>{subtitle}</Text>
         </View>

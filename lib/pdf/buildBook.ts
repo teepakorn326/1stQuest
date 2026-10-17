@@ -51,7 +51,7 @@ export async function buildBookPdf(input: {
     const qrs = input.withQr
       ? await Promise.all(
           c.recordings.map(async (r) => ({
-            image: await QRCode.toDataURL(mediaLink(input.appUrl, r.id), { margin: 1, width: 300, color: { dark: "#1C2B3A", light: "#FFFFFF" } }),
+            image: await QRCode.toDataURL(mediaLink(input.appUrl, r.id), { margin: 1, width: 300, color: { dark: "#33261A", light: "#FFFFFF" } }),
             caption: `Scan for ${r.uploader_name ? `${r.uploader_name}’s` : "the"} ${r.kind === "voice" ? "voice note" : "video"}`,
           })),
         )

@@ -4,7 +4,7 @@ import clsx from "clsx";
 type Variant = "primary" | "secondary" | "ghost";
 
 const styles: Record<Variant, string> = {
-  primary: "bg-primary text-white hover:bg-primary-hover disabled:opacity-60",
+  primary: "bg-cta text-cta-ink hover:bg-cta-hover disabled:opacity-60",
   secondary: "bg-surface text-primary border-[1.5px] border-field hover:border-primary disabled:opacity-60",
   ghost: "bg-transparent text-primary hover:text-primary-hover",
 };
@@ -31,7 +31,7 @@ export function ButtonLink({
   children: React.ReactNode;
 }) {
   return (
-    <Link href={href} className={clsx(shape, styles[variant], "hover:text-white", variant !== "primary" && "hover:text-primary-hover", className)}>
+    <Link href={href} className={clsx(shape, styles[variant], variant === "primary" ? "hover:text-cta-ink" : "hover:text-primary-hover", className)}>
       {children}
     </Link>
   );

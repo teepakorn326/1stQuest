@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { readBody, route, notFound, badRequest } from "@/lib/http";
+import { readBody, route, forbidden, notFound, badRequest } from "@/lib/http";
+import { canPost, POST_FORBIDDEN } from "@/lib/authz";
 import { requireApiUser } from "@/lib/auth/session";
 import { findCircleForMember } from "@/lib/db/queries/circles";
 import { findMediaByIds, insertMedia } from "@/lib/db/queries/media";
@@ -21,6 +22,7 @@ export const POST = route<{ id: string }>(async (req, { params }) => {
   const user = await requireApiUser();
   const circle = await findCircleForMember(z.uuid().parse(params.id), user.id);
   if (!circle) throw notFound();
+  if (!canPost({ userId: user.id, role: circle.role })) throw forbidden(POST_FORBIDDEN);
   const { mediaId, durationSec } = await readBody(req, Body);
 
   const [existing] = await findMediaByIds(circle.id, [mediaId]);

@@ -46,7 +46,7 @@ export function Slideshow({ name, memorial, slides }: { name: string; memorial: 
 
   return (
     <main
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#22374A] text-white select-none"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#3A2410] text-white select-none"
       data-testid="slideshow"
       data-slide={i}
       onTouchStart={(e) => (touchX.current = e.touches[0]?.clientX ?? null)}
@@ -82,9 +82,9 @@ export function Slideshow({ name, memorial, slides }: { name: string; memorial: 
       <div key={i} className="reveal-fade-in pointer-events-none relative flex flex-1 flex-col items-center justify-center px-6 py-20" aria-live="polite">
         {slide === null ? (
           <div className="flex max-w-2xl flex-col items-center gap-4 text-center">
-            <span className="text-lg text-[#C9D8E5]">{memorial ? "Remembering" : "Wish Circle"}</span>
+            <span className="text-lg text-[#F3DEC0]">{memorial ? "Remembering" : "1stQuest"}</span>
             <h1 className="m-0 text-4xl font-bold sm:text-6xl">{memorial ? name : `${name}’s book`}</h1>
-            <p className="m-0 text-lg text-[#C9D8E5]">
+            <p className="m-0 text-lg text-[#F3DEC0]">
               {slides.length === 0 ? "The first pages are still to come." : `${slides.length === 1 ? "1 card" : `${slides.length} cards`}, made together`}
             </p>
           </div>
@@ -99,9 +99,9 @@ export function Slideshow({ name, memorial, slides }: { name: string; memorial: 
               />
             )}
             <div className={clsx("flex max-w-xl flex-col gap-3", !slide.photoId && "items-center text-center")}>
-              <span className="text-sm font-bold tracking-wide text-[#A9C8E2] uppercase">{slide.meta}</span>
+              <span className="text-sm font-bold tracking-wide text-[#EED8B5] uppercase">{slide.meta}</span>
               <h2 className="m-0 text-3xl leading-tight font-bold sm:text-5xl">{slide.title}</h2>
-              <p className="m-0 text-lg leading-relaxed text-[#DCEBF7] sm:text-2xl">{slide.body}</p>
+              <p className="m-0 text-lg leading-relaxed text-[#FFF1DA] sm:text-2xl">{slide.body}</p>
             </div>
           </div>
         )}

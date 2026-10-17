@@ -3,7 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { CategoryIcon, ChatIcon } from "@/components/icons";
+import { CategoryIcon, ChatIcon, MicIcon } from "@/components/icons";
+import { useDictation } from "@/components/useDictation";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { FormError, Label, Textarea } from "@/components/ui/Field";
@@ -34,6 +35,7 @@ export function WishForm({
   const [viewerIds, setViewerIds] = useState<string[]>(initial.viewerIds);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dictation = useDictation(text, setText);
 
   function toggleViewer(id: string) {
     setViewerIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
@@ -64,6 +66,7 @@ export function WishForm({
       <div className="flex flex-col gap-[22px] px-5 pt-2 pb-5">
         <div className="flex flex-col gap-2">
           <Label htmlFor="wish">What would you love to do?</Label>
+          <div className="relative">
           <Textarea
             id="wish"
             rows={3}
@@ -73,8 +76,25 @@ export function WishForm({
             placeholder="e.g. Feel the sea breeze at Bondi again, with the grandkids."
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="text-[17px] leading-[1.45]"
+            className={clsx("text-[17px] leading-[1.45]", dictation.supported && "pr-16")}
           />
+          {dictation.supported && (
+            <button
+              type="button"
+              onClick={dictation.toggle}
+              aria-label={dictation.listening ? "Stop listening" : "Say your wish"}
+              aria-pressed={dictation.listening}
+              className={clsx(
+                "absolute right-2.5 bottom-2.5 flex h-12 w-12 items-center justify-center rounded-full",
+                dictation.listening ? "animate-pulse bg-cta text-cta-ink" : "bg-primary-soft text-primary",
+              )}
+              data-testid="wish-mic"
+            >
+              <MicIcon />
+            </button>
+          )}
+          </div>
+          {dictation.listening && <span className="text-sm text-ink-3" role="status">Listening… speak your wish, then tap the microphone again.</span>}
           {!wishId && (
             <Link href="/wishes/talk" className="flex min-h-11 items-center gap-2 text-[15px] font-bold no-underline">
               <ChatIcon size={20} /> Not sure where to start? Talk it through
@@ -128,7 +148,7 @@ export function WishForm({
                 members.map((m, i) => (
                   <label
                     key={m.user_id}
-                    className={clsx("flex min-h-12 items-center gap-3 px-3.5 py-2 text-base", i < members.length - 1 && "border-b border-[#E6EEF4]")}
+                    className={clsx("flex min-h-12 items-center gap-3 px-3.5 py-2 text-base", i < members.length - 1 && "border-b border-[#F6EBDA]")}
                   >
                     <input
                       type="checkbox"

@@ -30,7 +30,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
   ]);
   const isAuthor = wish.author_id === user.id;
   const viewer = { userId: user.id, role: wish.viewer_role };
-  const canPlan = isAuthor || wish.viewer_role !== "doctor";
+  const canPlan = wish.viewer_role === "owner";
   const quests: QuestView[] = (plan?.quests ?? []).map((q) => {
     const quest = { status: q.status, claimed_by_user_id: q.claimed_by_user_id };
     const can = (a: "claim" | "release" | "done") => questTransition(a, quest, wish, viewer, wish.viewer_ids).ok;
@@ -63,7 +63,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
           <CategoryIcon category={wish.category} size={18} />
           {CATEGORY_LABEL[wish.category]}
         </span>
-        {isAuthor ? (
+        {isAuthor && wish.viewer_role === "owner" ? (
           <Link href={`/wishes/${wish.id}/edit`} className="flex h-11 items-center px-2 text-[15px] font-bold no-underline">
             Change
           </Link>
@@ -108,7 +108,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
                 href={`/cards/${c.id}`}
                 className="flex items-center gap-3 rounded-[14px] border border-line bg-surface p-2.5 text-ink no-underline hover:text-ink"
               >
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[10px] bg-[#A4C4DF]">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[10px] bg-[#FFD497]">
                   {c.cover_media_id && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={`/api/v1/media/${c.cover_media_id}`} alt="" className="h-full w-full object-cover" />
@@ -120,11 +120,13 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
           </section>
         )}
       </div>
-      <div className="sticky bottom-[76px] mt-auto border-t border-line bg-bg px-5 pt-3 pb-4">
-        <ButtonLink href={`/wishes/${wish.id}/moments`} className="w-full">
-          We did it, add moments
-        </ButtonLink>
-      </div>
+      {canPlan && (
+        <div className="sticky bottom-[76px] mt-auto border-t border-line bg-bg px-5 pt-3 pb-4">
+          <ButtonLink href={`/wishes/${wish.id}/moments`} className="w-full">
+            We did it, add moments
+          </ButtonLink>
+        </div>
+      )}
     </main>
   );
 }

@@ -149,7 +149,7 @@ export function AddMomentsForm({
           <h2 className="m-0 text-base font-bold">Photos</h2>
           <div className="grid grid-cols-3 gap-2" data-testid="photo-grid">
             {photos.map((p, i) => (
-              <div key={p.url} className="relative aspect-square overflow-hidden rounded-xl bg-[#B5D0E7]">
+              <div key={p.url} className="relative aspect-square overflow-hidden rounded-xl bg-[#FFDFAE]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
                 {!busy && (
