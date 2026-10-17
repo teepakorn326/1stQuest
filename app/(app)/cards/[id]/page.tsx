@@ -74,9 +74,8 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
             <SparkleIcon size={16} className="text-gold" /> Gold card · the family loves this one
           </span>
         ) : (
-          <span className="flex items-center gap-1.5 rounded-2xl bg-tint px-3 py-1.5 text-sm font-bold text-primary-hover">
-            <CategoryIcon category={card.category} size={18} />
-            {CATEGORY_LABEL[card.category]}
+          <span className="flex items-center gap-1.5 rounded-2xl bg-tint px-3 py-1.5 text-sm font-bold text-primary-hover" data-testid="gold-hint">
+            <SparkleIcon size={16} className="text-gold" /> A message will turn this card gold
           </span>
         )}
         <span className="w-11" />

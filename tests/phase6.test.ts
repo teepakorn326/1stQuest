@@ -67,16 +67,15 @@ d("level-up and recordings", async () => {
     cards.createCard({ circleId, authorId: ids.a, wish: null, category: "people", title: "T", body: "B", story: "S", place: null, mediaIds });
   const level = async (id: string) => (await raw<{ level: number }[]>`select level from cards where id = ${id}`)[0]!.level;
 
-  it("turns gold at the third distinct contributor, exactly once", async () => {
+  it("turns gold at the first comment, exactly once; photos and voice notes alone don't", async () => {
     const card = await newCard();
     const detail = (await cards.findCardForMember(card.id, ids.a))!;
-    expect((await cards.addMessage(detail, ids.a, "me again")).levelledUp).toBe(false); // author twice = 1 person
-    expect((await cards.addMessage(detail, ids.b, "two")).levelledUp).toBe(false);
-    expect(await level(card.id)).toBe(0);
     const voice = crypto.randomUUID();
-    await media.insertMedia({ id: voice, circleId, uploaderId: ids.c, path: `${circleId}/${voice}.webm`, mimeType: "audio/webm", bytes: 5, kind: "voice", durationSec: 12 });
-    const r = await media.attachPhotosToCard({ cardId: card.id, circleId, wishId: null, wishText: null, cardTitle: "T", actorId: ids.c, mediaIds: [voice] });
-    expect(r).toMatchObject({ added: 1, levelledUp: true });
+    await media.insertMedia({ id: voice, circleId, uploaderId: ids.a, path: `${circleId}/${voice}.webm`, mimeType: "audio/webm", bytes: 5, kind: "voice", durationSec: 12 });
+    const r = await media.attachPhotosToCard({ cardId: card.id, circleId, wishId: null, wishText: null, cardTitle: "T", actorId: ids.a, mediaIds: [voice] });
+    expect(r).toMatchObject({ added: 1, levelledUp: false });
+    expect(await level(card.id)).toBe(0);
+    expect((await cards.addMessage(detail, ids.b, "lovely")).levelledUp).toBe(true);
     expect(await level(card.id)).toBe(1);
     expect((await cards.addMessage(detail, ids.c, "again")).levelledUp).toBe(false);
     const [{ n }] = (await raw<{ n: number }[]>`select count(*)::int as n from activity where ref_id = ${card.id} and type = 'card_levelled_up'`) as unknown as [{ n: number }];
