@@ -3,7 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { lintText } from "../lib/copyLint";
 
-const ROOTS = ["app", "components", "lib/ai"];
+const ROOTS = ["app", "components", "lib/ai", "lib/pdf"];
 const EXT = /\.(tsx?|jsx?|md|json|css)$/;
 
 async function* walk(dir: string): AsyncGenerator<string> {

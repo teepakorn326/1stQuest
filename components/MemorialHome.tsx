@@ -1,6 +1,6 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { CategoryIcon, PlusIcon } from "@/components/icons";
+import { BookIcon, CategoryIcon, PlusIcon } from "@/components/icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { CATEGORY_LABEL } from "@/lib/activityText";
@@ -67,6 +67,12 @@ export function MemorialHome({ name, photoSrc, cards }: { name: string; photoSrc
           </Link>
         ))}
       </section>
+      <Link
+        href="/book/export"
+        className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-field bg-surface text-base font-bold no-underline"
+      >
+        <BookIcon size={20} /> Make a book for the service
+      </Link>
     </main>
   );
 }

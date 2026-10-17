@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import clsx from "clsx";
-import { CategoryIcon, PlusIcon } from "@/components/icons";
+import { CategoryIcon, ExportIcon, PlusIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { CATEGORY_LABEL } from "@/lib/activityText";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
@@ -151,7 +151,16 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   return (
     <main className="flex flex-col gap-4 px-5 pt-5 pb-5">
       <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
-      <h1 className="m-0 text-2xl font-bold">{circle.patient_name}’s book</h1>
+      <header className="flex items-center justify-between">
+        <h1 className="m-0 text-2xl font-bold">{circle.patient_name}’s book</h1>
+        <Link
+          href="/book/export"
+          aria-label="Make a copy of the book"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface text-primary"
+        >
+          <ExportIcon size={22} />
+        </Link>
+      </header>
       <div role="tablist" aria-label="Book view" className="grid grid-cols-2 gap-1 rounded-[14px] bg-tint p-1">
         {(["collection", "timeline"] as const).map((v) => (
           <Link

@@ -151,3 +151,25 @@ export async function listRecentCards(circleId: string, viewerId: string, limit 
     order by c.created_at desc
     limit ${limit}`;
 }
+
+export type ExportCard = BookCard & {
+  body: string;
+  author_name: string | null;
+  photos: { id: string; path: string }[];
+  recordings: { id: string; kind: "voice" | "video"; uploader_name: string | null }[];
+};
+
+/** Everything a printed book or slideshow needs, for cards this viewer may see, in one query. */
+export async function listCardsForExport(circleId: string, viewerId: string): Promise<ExportCard[]> {
+  return sql<ExportCard[]>`
+    select c.id, c.title, c.body, c.category, c.happened_on, c.place, c.cover_media_id, c.level, c.created_at, c.wish_id,
+      u.name as author_name,
+      coalesce((select json_agg(json_build_object('id', m.id, 'path', m.path) order by (m.id = c.cover_media_id) desc, m.created_at)
+                from media m where m.card_id = c.id and m.kind = 'photo'), '[]') as photos,
+      coalesce((select json_agg(json_build_object('id', m.id, 'kind', m.kind, 'uploader_name', mu.name) order by m.created_at)
+                from media m left join users mu on mu.id = m.uploader_id where m.card_id = c.id and m.kind <> 'photo'), '[]') as recordings
+    from cards c
+    left join wishes w on w.id = c.wish_id
+    left join users u on u.id = c.author_id
+    where c.circle_id = ${circleId} and (w.id is null or ${wishVisibleTo(viewerId)})`;
+}

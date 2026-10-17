@@ -80,3 +80,22 @@ export async function findMediaPathForMember(mediaId: string, viewerId: string):
       )`;
   return row?.path ?? null;
 }
+
+export type MediaForViewer = { id: string; kind: MediaKind; card_id: string | null; card_title: string | null; uploader_name: string | null };
+
+/** A media item plus its card, if this viewer may see it (same rule as findMediaPathForMember). */
+export async function findMediaForMember(mediaId: string, viewerId: string): Promise<MediaForViewer | null> {
+  const [row] = await sql<MediaForViewer[]>`
+    select m.id, m.kind, m.card_id, c.title as card_title, u.name as uploader_name
+    from media m
+    join memberships mem on mem.circle_id = m.circle_id and mem.user_id = ${viewerId}
+    left join cards c on c.id = m.card_id
+    left join wishes w on w.id = c.wish_id
+    left join users u on u.id = m.uploader_id
+    where m.id = ${mediaId}
+      and (
+        (m.card_id is null and m.uploader_id = ${viewerId})
+        or (m.card_id is not null and (w.id is null or ${wishVisibleTo(viewerId)}))
+      )`;
+  return row ?? null;
+}

@@ -92,3 +92,6 @@ export const HeartFilled = ({ size, className, filled }: P & { filled?: boolean 
 export const VideoIcon = ({ size, className }: P) => (
   <svg {...base(size)} className={className}><rect x="3" y="6" width="13" height="12" rx="2" /><path d="M16 10l5-3v10l-5-3z" /></svg>
 );
+export const ExportIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M12 4v11M7.5 8.5L12 4l4.5 4.5" /><path d="M5 14v5h14v-5" /></svg>
+);

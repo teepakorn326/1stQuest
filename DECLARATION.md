@@ -2,7 +2,7 @@
 
 Every feature in the spec appears in exactly one list. Nothing is described as partially working: anything not fully working is under **Not built**.
 
-_Last updated: Phase 6 (voice and video, card level-up, memorial mode). Live at https://wish-circle-iota.vercel.app._
+_Last updated: Phase 7 (photo book PDF and slideshow). Every phase in the spec is now built. Live at https://wish-circle-iota.vercel.app._
 
 **Before you judge:**
 - **Sign-in is in dev mode.** No verified email sender is set up yet, so the sign-in link is shown on screen instead of emailed. This also means anyone can sign in as any email address, including the demo accounts. It makes the demo easy to try; it is not production auth. Setting `RESEND_API_KEY` and a verified `EMAIL_FROM` switches to real email with no code change.
@@ -67,13 +67,17 @@ _Last updated: Phase 6 (voice and video, card level-up, memorial mode). Live at 
   - The book’s empty slots ask for memories instead.
   - “Share a memory” makes a card with no wish (photos, voice, video, a few words), and the AI writes it as a remembrance.
   - Existing wishes, cards and messages all stay.
+- Make a copy of the book (export button on the Book tab; “Make a book for the service” in memorial mode). Choose Photo book or Slideshow, and order By category or By date.
+  - Photo book: a PDF built on the server with @react-pdf/renderer and streamed as a download. It has a cover, then one page per card with up to 3 photos, the category, date and place, title, words and who shared it, plus a gold bar for gold cards. It only includes cards the downloader may see.
+  - Optional QR codes for voice notes and videos point to `/m/<mediaId>`, which asks for sign-in, then plays the recording only for members who may see that card.
+  - Slideshow: a full-screen page with a cover, then one slide per card (photo and words). Arrow keys or space, tapping either side, or swiping move between slides. It also has Play (8 seconds a slide), Full screen, and Escape to leave.
 - Photos, voice notes and videos are only served through `GET /api/v1/media/:id`, which checks membership and visibility, then 302s to a 10-minute signed URL.
 
 **Platform**
 - `GET /api/health` runs a real `SELECT 1`.
 - Every API route checks circle membership, validates input with zod, and returns `{ error: { code, message } }` without stack traces. Logs are structured JSON with a request id.
 - Every AI call has a 20s timeout and retries with backoff, and logs model, tokens and latency. Sonnet calls use the server-side refusal fallback.
-- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 80 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the third contributor, voice/video limits, memorial undo window, copy lint). `pnpm smoke` is the Playwright demo-loop test.
+- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 85 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the third contributor, voice/video limits, memorial undo window, book page order, a real PDF render, copy lint). `pnpm smoke` is the Playwright demo-loop test.
 
 ## Seeded for context
 
@@ -84,7 +88,6 @@ _Last updated: Phase 6 (voice and video, card level-up, memorial mode). Live at 
 ## Not built
 
 - Likes on individual messages (in the design, not in the spec’s data model).
-- PDF export and slideshow (no export button is shown, including “Make a book for the service” in memorial mode).
 - Birth and death years on the memorial Home (the design shows “[Birth year] – [Year]”; the app doesn’t collect dates).
 - Choosing the hemisphere: every circle uses the southern hemisphere for seasons. The column exists, but there’s no setting.
 - Notes from the care team on plans (the feed design shows “Dr Lin left a note”).
@@ -105,4 +108,5 @@ _Last updated: Phase 6 (voice and video, card level-up, memorial mode). Live at 
 - A video’s 50MB cap (spec: 100MB) comes from Supabase’s free plan.
 - Level-up counts the card’s maker as a contributor, so a card needs two other people to turn gold.
 - Switching to memorial mode posts nothing to the activity feed, on purpose.
+- The PDF uses the built-in Helvetica font rather than Atkinson Hyperlegible, so printing doesn’t depend on fetching a font at render time.
 - The smoke test creates its own circle on each run (and covers create circle and invite/join) instead of adding to Nana Rose’s circle, so the seeded demo stays clean.
