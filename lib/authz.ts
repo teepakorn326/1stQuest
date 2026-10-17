@@ -52,3 +52,14 @@ export function canSwitchMode(viewer: Viewer, circle: Pick<CircleRow, "mode" | "
 export function canInvite(viewer: Viewer): boolean {
   return canEditCircle(viewer);
 }
+
+/** A card follows its wish's visibility; cards with no wish (shared memories) are for the whole circle. */
+export function canSeeCard(
+  viewer: Viewer,
+  card: { wish_id: string | null; wish_author_id: string | null; wish_visibility: Visibility | null },
+  chosenViewerIds: readonly string[] = [],
+): boolean {
+  if (!viewer.role) return false;
+  if (!card.wish_id || !card.wish_author_id || !card.wish_visibility) return true;
+  return canSeeWish(viewer, { author_id: card.wish_author_id, visibility: card.wish_visibility }, chosenViewerIds);
+}

@@ -11,6 +11,8 @@ import { CATEGORY_LABEL, MOBILITY_LABEL } from "@/lib/activityText";
 import { requirePageUser } from "@/lib/auth/session";
 import { listMembers } from "@/lib/db/queries/memberships";
 import { findLatestPlan, findWishForMember } from "@/lib/db/queries/wishes";
+import { listBookCards } from "@/lib/db/queries/cards";
+import { ButtonLink } from "@/components/ui/Button";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,11 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
   // Same 404 for "doesn't exist" and "not yours to see".
   if (!wish || !canSeeWish({ userId: user.id, role: wish.viewer_role }, wish, wish.viewer_ids)) notFound();
 
-  const [plan, members] = await Promise.all([findLatestPlan(wish.id), wish.visibility === "chosen" ? listMembers(wish.circle_id) : []]);
+  const [plan, members, cards] = await Promise.all([
+    findLatestPlan(wish.id),
+    wish.visibility === "chosen" ? listMembers(wish.circle_id) : [],
+    listBookCards(wish.circle_id, user.id, wish.id),
+  ]);
   const isAuthor = wish.author_id === user.id;
   const viewer = { userId: user.id, role: wish.viewer_role };
   const canPlan = isAuthor || wish.viewer_role !== "doctor";
@@ -93,6 +99,31 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
             ))}
           </section>
         )}
+        {cards.length > 0 && (
+          <section className="flex flex-col gap-2" data-testid="wish-cards">
+            <h2 className="m-0 mb-0.5 text-lg font-bold">In the book</h2>
+            {cards.map((c) => (
+              <Link
+                key={c.id}
+                href={`/cards/${c.id}`}
+                className="flex items-center gap-3 rounded-[14px] border border-line bg-surface p-2.5 text-ink no-underline hover:text-ink"
+              >
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[10px] bg-[#A4C4DF]">
+                  {c.cover_media_id && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`/api/v1/media/${c.cover_media_id}`} alt="" className="h-full w-full object-cover" />
+                  )}
+                </div>
+                <span className="text-base font-bold">{c.title}</span>
+              </Link>
+            ))}
+          </section>
+        )}
+      </div>
+      <div className="sticky bottom-[76px] mt-auto border-t border-line bg-bg px-5 pt-3 pb-4">
+        <ButtonLink href={`/wishes/${wish.id}/moments`} className="w-full">
+          We did it, add moments
+        </ButtonLink>
       </div>
     </main>
   );

@@ -4,12 +4,16 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { log } from "@/lib/log";
 import { CHAT_MODEL, PLAN_MODEL } from "@/lib/ai/models";
 import { PLAN_SYSTEM, planUserMessage } from "@/lib/ai/prompts/plan";
+import { CARD_SYSTEM, cardUserText } from "@/lib/ai/prompts/card";
 import { talkSystemPrompt } from "@/lib/ai/prompts/talk";
 import {
   AiError,
+  CardSchema,
   PlanSchema,
   TalkTurnSchema,
   type AiProvider,
+  type CardInput,
+  type CardOutput,
   type PlanInput,
   type PlanOutput,
   type TalkInput,
@@ -111,6 +115,39 @@ export class AnthropicProvider implements AiProvider {
       stopReason: res.stop_reason,
     });
     if (res.stop_reason === "refusal") throw new AiError("refused", "The model declined to plan this wish.");
+    if (!res.parsed_output) throw new AiError("invalid_output", `Unparseable output (stop: ${res.stop_reason})`);
+    return res.parsed_output;
+  }
+
+  async card(input: CardInput): Promise<CardOutput> {
+    const started = Date.now();
+    const content: Anthropic.Beta.BetaContentBlockParam[] = [
+      ...input.images.slice(0, 4).map(
+        (data) => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data } }) as const,
+      ),
+      { type: "text", text: cardUserText(input) },
+    ];
+    const res = await withRetry("card", PLAN_MODEL, () =>
+      this.client.beta.messages.parse({
+        model: PLAN_MODEL,
+        max_tokens: 4000,
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        output_config: { effort: "low", format: zodOutputFormat(CardSchema) },
+        system: [{ type: "text", text: CARD_SYSTEM, cache_control: { type: "ephemeral" } }],
+        messages: [{ role: "user", content }],
+      }),
+    );
+    log.info("ai call", {
+      task: "card",
+      model: res.model,
+      images: Math.min(input.images.length, 4),
+      inputTokens: res.usage.input_tokens,
+      outputTokens: res.usage.output_tokens,
+      ms: Date.now() - started,
+      stopReason: res.stop_reason,
+    });
+    if (res.stop_reason === "refusal") throw new AiError("refused", "The model declined to write this card.");
     if (!res.parsed_output) throw new AiError("invalid_output", `Unparseable output (stop: ${res.stop_reason})`);
     return res.parsed_output;
   }

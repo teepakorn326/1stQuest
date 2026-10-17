@@ -1,5 +1,6 @@
 import "server-only";
 import { sql, type Tx } from "@/lib/db/client";
+import { wishVisibleTo } from "@/lib/db/queries/visibility";
 import type { ActivityRow } from "@/lib/db/types";
 
 export type ActivityType =
@@ -63,13 +64,7 @@ export async function listActivity(
     left join users u on u.id = a.actor_id
     left join wishes w on w.id = a.wish_id
     where a.circle_id = ${circleId}
-      and (
-        a.wish_id is null
-        or w.author_id = ${viewerId}
-        or w.visibility = 'circle'
-        or (w.visibility = 'chosen' and exists (
-              select 1 from wish_viewers v where v.wish_id = w.id and v.user_id = ${viewerId}))
-      )
+      and (a.wish_id is null or ${wishVisibleTo(viewerId)})
       ${types ? sql`and a.type = any(${types as unknown as string[]})` : sql``}
       ${opts.before ? sql`and a.created_at < ${opts.before}` : sql``}
     order by a.created_at desc

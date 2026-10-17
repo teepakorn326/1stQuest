@@ -30,3 +30,20 @@ export async function signedUrl(path: string, seconds = 600): Promise<string> {
   if (error || !data) throw new Error(`storage sign failed: ${error?.message ?? "no data"}`);
   return data.signedUrl;
 }
+
+/** One-time signed upload URL so the browser can send a large original straight to Storage. */
+export async function signedUpload(path: string): Promise<{ path: string; token: string }> {
+  const { data, error } = await admin().storage.from(MEDIA_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) throw new Error(`storage signed upload failed: ${error?.message ?? "no data"}`);
+  return { path: data.path, token: data.token };
+}
+
+export async function downloadObject(path: string): Promise<Buffer | null> {
+  const { data, error } = await admin().storage.from(MEDIA_BUCKET).download(path);
+  if (error || !data) return null;
+  return Buffer.from(await data.arrayBuffer());
+}
+
+export async function removeObjects(paths: string[]): Promise<void> {
+  if (paths.length) await admin().storage.from(MEDIA_BUCKET).remove(paths);
+}

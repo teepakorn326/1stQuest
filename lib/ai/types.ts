@@ -23,6 +23,7 @@ export type TalkInput = {
 export interface AiProvider {
   talk(input: TalkInput): Promise<TalkTurn>;
   plan(input: PlanInput): Promise<PlanOutput>;
+  card(input: CardInput): Promise<CardOutput>;
 }
 
 export class AiError extends Error {
@@ -58,4 +59,22 @@ export type PlanInput = {
   mobilityNotes: string | null;
   wish: { text: string; category: Category };
   existingQuests: { title: string; status: string }[];
+};
+
+export const CardSchema = z.object({
+  title: z.string().describe("A short, specific title from the moment itself, under 50 characters. No quotation marks."),
+  body: z.string().describe("2-3 warm sentences, under 60 words, describing what happened, told like a page in a family book."),
+  place: z.string().nullable().describe("Where it happened, in one or two words (e.g. 'Bondi', 'Home'), or null if unknown."),
+});
+export type CardOutput = z.infer<typeof CardSchema>;
+
+export type CardInput = {
+  patientName: string;
+  authorName: string;
+  wish: { text: string; category: Category } | null;
+  story: string;
+  /** Base64 JPEGs, already downsized. */
+  images: string[];
+  /** Set when retrying because the first draft used a word the app avoids. */
+  avoid?: string[];
 };

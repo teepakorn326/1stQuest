@@ -1,4 +1,4 @@
-import type { AiProvider, PlanInput, PlanOutput, TalkInput, TalkTurn } from "@/lib/ai/types";
+import type { AiProvider, CardInput, CardOutput, PlanInput, PlanOutput, TalkInput, TalkTurn } from "@/lib/ai/types";
 
 /**
  * Deterministic provider for tests and the Playwright smoke run (AI_PROVIDER=mock).
@@ -33,6 +33,16 @@ export class MockAiProvider implements AiProvider {
       needsCareTeam: true,
       careTeamNote: "about the outing.",
       quests,
+    };
+  }
+
+  async card(input: CardInput): Promise<CardOutput> {
+    this.calls.push({ task: "card", input });
+    const first = input.story.trim().split(/[.!?]/)[0]?.trim() || input.wish?.text || "A day together";
+    return {
+      title: first.slice(0, 48),
+      body: `${input.story.trim() || "A quiet, happy day together."} ${input.patientName} smiled the whole way home.`,
+      place: null,
     };
   }
 }

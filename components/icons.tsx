@@ -80,3 +80,12 @@ export const CheckIcon = ({ size, className }: P) => (
 export const AlertIcon = ({ size, className }: P) => (
   <svg {...base(size)} className={className}><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18h.01" /></svg>
 );
+export const SparkleIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6" /></svg>
+);
+export const MessageIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M4 5h16v11H9l-5 4z" /></svg>
+);
+export const HeartFilled = ({ size, className, filled }: P & { filled?: boolean }) => (
+  <svg {...base(size)} fill={filled ? "currentColor" : "none"} className={className}><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" /></svg>
+);

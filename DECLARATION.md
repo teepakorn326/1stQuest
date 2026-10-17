@@ -2,7 +2,7 @@
 
 Every feature in the spec appears in exactly one list. Nothing is described as partially working; a feature not fully working is under **Not built**. Updated at the end of each phase.
 
-_Last updated: Phase 3 (plans, quests, live feed), deployed at https://wish-circle-iota.vercel.app._
+_Last updated: Phase 4 (moments, cards, the book), deployed at https://wish-circle-iota.vercel.app._
 
 Right now the live site has no verified email sender, so sign-in uses the on-screen dev link. Supabase’s free plan caps uploads at 50MB per file.
 
@@ -28,6 +28,13 @@ Right now the live site has no verified email sender, so sign-in uses the on-scr
 - Visibility enforced everywhere: private wishes are only visible to their author; chosen wishes only to the chosen people and the author. A private wish leaves nothing in the activity feed, and a chosen wish appears there without its text.
 - “Talk it through”: a chat with gentle open questions from Claude Haiku 5.5. It replies in the user’s language, and offers topic chips and voice input (Web Speech API, where the browser supports it). When something concrete comes up it shows a “This could be a wish” card with Save / Edit, which opens New wish prefilled. The conversation is saved per person per circle, with “Start over”.
 - AI calls: 20s timeout, retries with backoff, and a log line per call (model, tokens, latency). If the AI fails, the person’s message stays in the box with a retry message.
+- “We did it, add moments”: up to 10 photos (JPG, PNG or WebP, up to 15MB each) plus a story.
+  - Photos go from the browser straight to a private Supabase Storage staging folder through one-time signed upload URLs. The server then runs sharp on each one: auto-rotate, fit within 2000px, re-encode as JPEG (which strips EXIF, including GPS location). The result is stored at `<circleId>/<mediaId>.jpg` and the original is deleted.
+- AI cards (Claude Sonnet 5.5, with image input): writes a title and a 2-3 sentence body from the story and photos, in the author’s language. It never uses the banned words: a draft that does is rewritten once. If the AI fails, the photos and words are kept and “Make the card” can be retried without re-uploading.
+- Card reveal: spin-in, shine and sparkle, “Add to the book” (the card flies into the book), “Change the words” (author only), “Open the card”, “Play again”. Respects reduced-motion settings.
+- Card detail: photos, words, credit line (“Made from N photos and <name>’s story”), place and date, likes (who liked it), messages to the person, and adding more photos.
+- The book: Collection (six category slots; filled slots show fanned covers and a count; empty slots show a gentle prompt and “Add a wish”) and Timeline (cards grouped by “Month · season”, seasons from the circle’s hemisphere, south by default). The book has no finished state.
+- Photos are served only through `GET /api/v1/media/:id`: membership and card visibility are checked, then a 302 to a 10-minute signed URL. Cards and their photos follow their wish’s visibility.
 - `GET /api/health` runs a real `SELECT 1`.
 - Authorization: every API route checks circle membership; other circles return 404.
 
@@ -36,14 +43,11 @@ Right now the live site has no verified email sender, so sign-in uses the on-scr
 - The “Nana Rose” circle: Ploy (owner), Tom, Krit, Aunt May (family), Dr Lin (doctor).
 - Three wishes, two plans, quests in mixed states (done, in progress, open, open needing the care team). The two seeded plans were written by hand; new plans come from the AI.
 - Two cards (text only, no photos), and activity items matching the design.
-- Seeded cards are real database rows; the screens that create cards aren’t built yet (see below).
+- The two seeded cards have no photos.
 
 ## Not built
 
-- Add moments (photo upload, resizing, story), AI card text, card reveal animation.
-- Card detail: likes, messages, more photos.
-- The book: Collection and Timeline views. The Book tab says so.
-- Voice notes and video.
+- Voice notes and video (the “voice or video” part of Add moments isn’t shown yet).
 - Card level-up (gold at 3+ contributors).
 - Memorial mode.
 - PDF export and slideshow.
@@ -53,3 +57,5 @@ Right now the live site has no verified email sender, so sign-in uses the on-scr
 
 - Live updates use a Supabase Realtime *broadcast* sent by a database trigger on `activity`, not `postgres_changes`. The activity table is closed to the public key by row-level security, so `postgres_changes` would deliver nothing (or, if opened up, would expose every circle’s feed). The broadcast carries no data; pages refetch through the signed-in API. It still fires on commit of the same transaction that wrote the activity row.
 - Pages are server-rendered and refresh with `router.refresh()` on each event, instead of invalidating React Query caches.
+- Photos are uploaded straight from the browser to Storage (signed upload URLs), then resized by the server, because Vercel caps request bodies at 4.5MB, too small for 10 photos of up to 15MB each through a route handler.
+- The card reveal uses the CSS keyframes from the design rather than framer-motion.
