@@ -119,13 +119,14 @@ test("demo loop: sign in → circle → join by invite → wish → AI plan → 
     expect(cardTitle.length).toBeGreaterThan(0);
   });
 
-  await test.step("card reveal → added to the book's Places slot", async () => {
+  await test.step("card reveal → added to the book, found under Places", async () => {
     await owner.getByTestId("add-to-book").click();
     await expect(owner.getByText("Saved in Places")).toBeVisible();
     await owner.goto("/book");
-    const places = owner.locator('[data-slot="places"]');
-    await expect(places).toContainText("1 card");
-    await places.click();
+    await owner.getByRole("link", { name: "Places", exact: true }).click();
+    const tile = owner.getByTestId("book-card").filter({ hasText: cardTitle });
+    await expect(tile).toBeVisible();
+    await tile.click();
     await expect(owner.getByRole("heading", { name: cardTitle })).toBeVisible();
     await expect(owner.getByTestId("card-photos").locator("img")).toHaveCount(2);
   });
