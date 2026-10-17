@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { PhoneInput } from "@/components/PhoneInput";
 import { Button } from "@/components/ui/Button";
 import { FormError, Input, Label } from "@/components/ui/Field";
 
@@ -53,14 +54,14 @@ export function WelcomeForm({ next }: { next: string }) {
       <Label htmlFor="phone" className="mt-2">
         Mobile number <span className="font-normal text-ink-3">(optional)</span>
       </Label>
-      <Input id="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+61 4… or +66 8…" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="welcome-phone" />
+      <PhoneInput id="phone" value={null} onChange={setPhone} testId="welcome-phone" />
       {phone.trim() && (
         <label className="flex min-h-11 items-center gap-3 text-[15px]">
           <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="h-5 w-5 accent-primary" />
           Text me when the owner posts something new
         </label>
       )}
-      <span className="text-sm text-ink-3">Include the country code. You can change this later in Circle.</span>
+      <span className="text-sm text-ink-3">You can change this later in Circle.</span>
       <Button type="submit" disabled={busy} className="mt-1 w-full">
         {busy ? "Saving…" : "Continue"}
       </Button>

@@ -57,7 +57,7 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 - Share one card: the card’s owner can create a link that anyone can open without signing in. It shows only that card (words, photos, recordings), with no messages, members or anything else from the circle. “Stop sharing” turns the link off straight away. Shared pages are marked noindex.
 - Notifications when the owner posts (a wish, a plan, a card, a memory, or photos or a voice note added to a card). They go automatically to everyone in the circle who may see the post; a private wish notifies no one.
   - In the app: a bell with an unread count, a Notifications page, and a live pop-up (an empty Realtime ping on each person’s own channel; 30-second poll as a fallback).
-  - By text message (ClickSend): each person can add a mobile number and opt in when they first sign in (Welcome page) or later from the Circle tab. Numbers use the international format (+66…, +61…). Texts go out after the post is saved and never slow it down.
+  - By text message (ClickSend): each person can add a mobile number and opt in when they first sign in (Welcome page) or later from the Circle tab. People pick their country (guessed from the device’s time zone) and type the number as they know it, leading 0 and spaces included (“081 234 5678”). The app stores it in the international format (+66812345678). Texts go out after the post is saved and never slow it down.
 - The book, which has no finished state:
   - Collection (the design’s updated “Book - collection” screen): filter chips (All and the six kinds), then a 3-column grid of tiles. Each card is a tile with its photo, title and kind, in a gold frame with a glow and star badge when gold, or a soft grey frame otherwise. Wishes without a card yet are dashed amber tiles showing who is on it (“Tom is on it”), “Wish”, or “Done”. Each kind with nothing in it gets a gentle question tile (“Someone to see?”), and the owner gets an “Add a wish” tile.
   - Timeline: cards grouped by “Month · season”, with seasons for the southern hemisphere.
@@ -87,7 +87,7 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 - `GET /api/health` runs a real `SELECT 1`.
 - Every API route checks circle membership, validates input with zod, and returns `{ error: { code, message } }` without stack traces. Logs are structured JSON with a request id.
 - Every AI call has a 20s timeout and retries with backoff, and logs model, tokens and latency. Sonnet calls use the server-side refusal fallback.
-- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 100 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the first comment, voice limits, memorial undo window and handover (trusted switch, ask/confirm/7 days, owner cancel), book page order, a real PDF render, copy lint). `pnpm smoke` is the Playwright demo-loop test.
+- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 103 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the first comment, voice limits, memorial undo window and handover (trusted switch, ask/confirm/7 days, owner cancel), book page order, a real PDF render, copy lint). `pnpm smoke` is the Playwright demo-loop test.
 
 ## Seeded for context
 
