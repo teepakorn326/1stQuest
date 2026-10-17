@@ -1,7 +1,7 @@
 import "server-only";
 import { sql, type Tx } from "@/lib/db/client";
 import { insertActivity } from "@/lib/db/queries/activity";
-import type { Category, PlanRow, QuestStatus, Role, Visibility, WishRow } from "@/lib/db/types";
+import type { Category, Mobility, PlanRow, QuestStatus, Role, Visibility, WishRow } from "@/lib/db/types";
 
 export type WishSummary = {
   id: string;
@@ -84,6 +84,7 @@ async function wishActivity(tx: Tx, circleId: string, actorId: string, wishId: s
     circleId,
     actorId,
     type: "wish_added",
+    wishId,
     refId: wishId,
     payload: w.visibility === "circle" ? { text: w.text, category: w.category } : { category: w.category, chosen: true },
   });
@@ -110,6 +111,12 @@ export async function updateWish(wishId: string, authorId: string, w: WishInput)
       update wishes set text = ${w.text}, category = ${w.category}, visibility = ${w.visibility}
       where id = ${wishId} returning *`;
     await setViewers(tx, wishId, before.circle_id, w.visibility, w.viewerIds);
+    // Private wishes keep their quests locked; sharing unlocks them (and narrowing locks open ones).
+    if (w.visibility === "private") {
+      await tx`update quests set status = 'locked', updated_at = now() where wish_id = ${wishId} and status = 'open'`;
+    } else {
+      await tx`update quests set status = 'open', updated_at = now() where wish_id = ${wishId} and status = 'locked'`;
+    }
     if (before.visibility === "private" && w.visibility !== "private") {
       await wishActivity(tx, before.circle_id, authorId, wishId, w);
     }
@@ -118,7 +125,14 @@ export async function updateWish(wishId: string, authorId: string, w: WishInput)
 }
 
 export type PlanWithQuests = PlanRow & {
-  quests: { id: string; title: string; status: QuestStatus; needs_care_team: boolean; claimer_name: string | null }[];
+  quests: {
+    id: string;
+    title: string;
+    status: QuestStatus;
+    needs_care_team: boolean;
+    claimed_by_user_id: string | null;
+    claimer_name: string | null;
+  }[];
 };
 
 /** Latest plan for a wish with its quests, in one query. */
@@ -128,11 +142,54 @@ export async function findLatestPlan(wishId: string): Promise<PlanWithQuests | n
       coalesce((
         select json_agg(json_build_object(
           'id', q.id, 'title', q.title, 'status', q.status,
-          'needs_care_team', q.needs_care_team, 'claimer_name', u.name) order by q.position)
+          'needs_care_team', q.needs_care_team, 'claimed_by_user_id', q.claimed_by_user_id,
+          'claimer_name', u.name) order by q.position)
         from quests q left join users u on u.id = q.claimed_by_user_id
         where q.wish_id = p.wish_id
       ), '[]') as quests
     from plans p where p.wish_id = ${wishId}
     order by p.generated_at desc limit 1`;
   return row ?? null;
+}
+
+/**
+ * Saves a generated plan. Earlier plans stay as history; existing quests (open, in progress,
+ * done, locked) carry forward to the new plan, and the new quests are appended. Quests on a
+ * private wish start locked.
+ */
+export async function savePlan(input: {
+  wish: Pick<WishRow, "id" | "circle_id" | "text" | "visibility">;
+  actorId: string;
+  mobility: Mobility;
+  output: { plan: string; needsCareTeam: boolean; careTeamNote: string | null; quests: { title: string; needsCareTeam: boolean }[] };
+}): Promise<PlanRow> {
+  const { wish, output } = input;
+  return sql.begin(async (tx) => {
+    const [plan] = await tx<PlanRow[]>`
+      insert into plans (wish_id, text, based_on_mobility, needs_care_team, care_team_note)
+      values (${wish.id}, ${output.plan}, ${input.mobility}, ${output.needsCareTeam},
+              ${output.needsCareTeam ? output.careTeamNote : null})
+      returning *`;
+    await tx`update quests set plan_id = ${plan!.id} where wish_id = ${wish.id}`;
+    const [pos] = await tx<{ next: number }[]>`
+      select coalesce(max(position) + 1, 0)::int as next from quests where wish_id = ${wish.id}`;
+    const next = pos?.next ?? 0;
+    const status = wish.visibility === "private" ? "locked" : "open";
+    for (const [i, q] of output.quests.entries()) {
+      await tx`
+        insert into quests (wish_id, plan_id, title, status, needs_care_team, position)
+        values (${wish.id}, ${plan!.id}, ${q.title.slice(0, 120)}, ${status}, ${q.needsCareTeam}, ${next + i})`;
+    }
+    if (wish.visibility !== "private") {
+      await insertActivity(tx, {
+        circleId: wish.circle_id,
+        actorId: input.actorId,
+        type: "plan_generated",
+        wishId: wish.id,
+        refId: plan!.id,
+        payload: { wish: wish.text },
+      });
+    }
+    return plan!;
+  });
 }

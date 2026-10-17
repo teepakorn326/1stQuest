@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { BookIcon, PlusIcon } from "@/components/icons";
+import { LiveRefresh } from "@/components/LiveRefresh";
+import { realtimeConfig } from "@/lib/realtime";
 import { CircleSwitcher } from "@/components/CircleSwitcher";
 import { Greeting } from "@/components/Greeting";
 import { MobilityCard } from "@/components/MobilityCard";
@@ -38,12 +41,13 @@ export default async function HomePage() {
   const [circles, wishes, feed] = await Promise.all([
     listMyCircles(user.id),
     listVisibleWishes(circle.id, user.id, 5),
-    listActivity(circle.id, { limit: 3 }),
+    listActivity(circle.id, user.id, { limit: 3 }),
   ]);
   const photoSrc = circle.patient_photo_path ? `/api/v1/circles/${circle.id}/photo` : null;
 
   return (
     <main className="flex flex-col gap-5 px-5 pt-6 pb-5">
+      <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
       <header className="flex items-center gap-3.5">
         <Avatar name={circle.patient_name} seed="patient" size={56} src={photoSrc} tone="bg-[#C7DCEE] text-primary" />
         <div className="flex flex-1 flex-col gap-0.5">
@@ -77,6 +81,9 @@ export default async function HomePage() {
       <section className="flex flex-col gap-2.5">
         <div className="flex items-baseline justify-between">
           <h2 className="m-0 text-lg font-bold">Latest in the circle</h2>
+          <Link href="/activity" className="text-[15px] font-bold no-underline">
+            See all
+          </Link>
         </div>
         <div className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface px-4 py-3.5 text-[15px] leading-snug">
           {feed.map((a) => (

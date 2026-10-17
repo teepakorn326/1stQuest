@@ -6,7 +6,9 @@ import pkg from "@/package.json";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const version = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? pkg.version;
+  // CLI deploys can carry stale git metadata, so report the deployment id instead of a commit sha.
+  const deployment = process.env.VERCEL_DEPLOYMENT_ID?.replace(/^dpl_/, "").slice(0, 8);
+  const version = deployment ? `${pkg.version}+${deployment}` : pkg.version;
   try {
     await pingDb();
     return NextResponse.json({ ok: true, db: "ok", version });

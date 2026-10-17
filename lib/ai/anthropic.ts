@@ -2,9 +2,19 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { log } from "@/lib/log";
-import { CHAT_MODEL } from "@/lib/ai/models";
+import { CHAT_MODEL, PLAN_MODEL } from "@/lib/ai/models";
+import { PLAN_SYSTEM, planUserMessage } from "@/lib/ai/prompts/plan";
 import { talkSystemPrompt } from "@/lib/ai/prompts/talk";
-import { AiError, TalkTurnSchema, type AiProvider, type TalkInput, type TalkTurn } from "@/lib/ai/types";
+import {
+  AiError,
+  PlanSchema,
+  TalkTurnSchema,
+  type AiProvider,
+  type PlanInput,
+  type PlanOutput,
+  type TalkInput,
+  type TalkTurn,
+} from "@/lib/ai/types";
 
 const TIMEOUT_MS = 20_000;
 const ATTEMPTS = 3;
@@ -73,6 +83,34 @@ export class AnthropicProvider implements AiProvider {
       stopReason: res.stop_reason,
     });
     if (res.stop_reason === "refusal") throw new AiError("refused", "The model declined this turn.");
+    if (!res.parsed_output) throw new AiError("invalid_output", `Unparseable output (stop: ${res.stop_reason})`);
+    return res.parsed_output;
+  }
+
+  async plan(input: PlanInput): Promise<PlanOutput> {
+    const started = Date.now();
+    const res = await withRetry("plan", PLAN_MODEL, () =>
+      this.client.beta.messages.parse({
+        model: PLAN_MODEL,
+        max_tokens: 8000,
+        // Server-side refusal fallback: a declined request is re-run on a fallback model in the same call.
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        output_config: { effort: "medium", format: zodOutputFormat(PlanSchema) },
+        system: [{ type: "text", text: PLAN_SYSTEM, cache_control: { type: "ephemeral" } }],
+        messages: [{ role: "user", content: planUserMessage(input) }],
+      }),
+    );
+    log.info("ai call", {
+      task: "plan",
+      model: res.model,
+      inputTokens: res.usage.input_tokens,
+      outputTokens: res.usage.output_tokens,
+      cacheReadTokens: res.usage.cache_read_input_tokens ?? 0,
+      ms: Date.now() - started,
+      stopReason: res.stop_reason,
+    });
+    if (res.stop_reason === "refusal") throw new AiError("refused", "The model declined to plan this wish.");
     if (!res.parsed_output) throw new AiError("invalid_output", `Unparseable output (stop: ${res.stop_reason})`);
     return res.parsed_output;
   }

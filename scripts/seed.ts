@@ -67,9 +67,9 @@ async function main() {
 
     // One plan with mixed quest states
     const [plan] = await tx<{ id: string }[]>`
-      insert into plans (wish_id, text, based_on_mobility, needs_care_team, generated_at)
+      insert into plans (wish_id, text, based_on_mobility, needs_care_team, care_team_note, generated_at)
       values (${bondi}, ${"A slow morning at the north end of the beach. Park close to the ramp, borrow a beach wheelchair, and sit in the shade near the water."},
-              'short_walks_with_help', true, ${ago(60 * 24 * 13)})
+              'short_walks_with_help', true, 'about the car trip and time in the sun.', ${ago(60 * 24 * 13)})
       returning id`;
     const quests: [string, string, Key | null, boolean, number][] = [
       ["Find a beach with ramp access", "done", "krit", false, 20],
@@ -103,18 +103,18 @@ async function main() {
          ${"Purple everywhere this week."}, 'Home', ${ago(60 * 24 * 12)}, ${ago(60 * 24 * 12)})`;
 
     // Activity mirroring the design's feed
-    const act = async (actor: Key, type: string, payload: Record<string, unknown>, minutesAgo: number) => {
-      await tx`insert into activity (circle_id, actor_id, type, payload, created_at)
-               values (${circleId}, ${ids[actor]}, ${type}, ${tx.json(payload as never)}, ${ago(minutesAgo)})`;
+    const act = async (actor: Key, type: string, payload: Record<string, unknown>, minutesAgo: number, wishId: string | null = null) => {
+      await tx`insert into activity (circle_id, actor_id, type, wish_id, payload, created_at)
+               values (${circleId}, ${ids[actor]}, ${type}, ${wishId}, ${tx.json(payload as never)}, ${ago(minutesAgo)})`;
     };
     await act("ploy", "circle_created", {}, 60 * 24 * 40);
-    await act("may", "card_created", { title: "Sunday market dumplings" }, 60 * 24 * 26);
-    await act("ploy", "wish_added", { text: "Feel the sea breeze at Bondi" }, 60 * 24 * 14);
+    await act("may", "card_created", { title: "Sunday market dumplings" }, 60 * 24 * 26, market);
+    await act("ploy", "wish_added", { text: "Feel the sea breeze at Bondi" }, 60 * 24 * 14, bondi);
     await act("krit", "card_created", { title: "Jacarandas on our street" }, 60 * 24 * 12);
-    await act("ploy", "wish_added", { text: "Cook her mum’s jok together" }, 60 * 26);
-    await act("may", "photos_added", { count: 3, wish: "Sunday market" }, 120);
-    await act("tom", "quest_claimed", { title: "Book accessible transport" }, 60);
-    await act("krit", "quest_done", { title: "Find a beach with ramp access" }, 20);
+    await act("ploy", "wish_added", { text: "Cook her mum’s jok together" }, 60 * 26, jok);
+    await act("may", "photos_added", { count: 3, wish: "Sunday market" }, 120, market);
+    await act("tom", "quest_claimed", { title: "Book accessible transport", wish: "Feel the sea breeze at Bondi" }, 60, bondi);
+    await act("krit", "quest_done", { title: "Find a beach with ramp access", wish: "Feel the sea breeze at Bondi" }, 20, bondi);
 
     console.log(JSON.stringify({ level: "info", msg: "seeded", circleId, users: Object.keys(ids).map((k) => `${k}@${DEMO_DOMAIN}`) }));
   });

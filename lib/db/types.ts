@@ -89,6 +89,7 @@ export interface PlanRow {
   text: string;
   based_on_mobility: Mobility;
   needs_care_team: boolean;
+  care_team_note: string | null;
   generated_at: Date;
 }
 
@@ -151,6 +152,7 @@ export interface ActivityRow {
   id: string;
   circle_id: string;
   actor_id: string | null;
+  wish_id: string | null;
   type: string;
   ref_id: string | null;
   payload: Record<string, unknown>;

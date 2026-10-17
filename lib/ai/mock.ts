@@ -1,4 +1,4 @@
-import type { AiProvider, TalkInput, TalkTurn } from "@/lib/ai/types";
+import type { AiProvider, PlanInput, PlanOutput, TalkInput, TalkTurn } from "@/lib/ai/types";
 
 /**
  * Deterministic provider for tests and the Playwright smoke run (AI_PROVIDER=mock).
@@ -18,5 +18,21 @@ export class MockAiProvider implements AiProvider {
       };
     }
     return { reply: "Tell me a little more. Who would be there with you?", suggestion: null };
+  }
+
+  async plan(input: PlanInput): Promise<PlanOutput> {
+    this.calls.push({ task: "plan", input });
+    const have = new Set(input.existingQuests.map((q) => q.title));
+    const quests = [
+      { title: "Pick a calm morning that suits everyone", needsCareTeam: false },
+      { title: "Ask the care team if this plan is okay", needsCareTeam: true },
+      { title: "Pack water, a hat and a blanket", needsCareTeam: false },
+    ].filter((q) => !have.has(q.title));
+    return {
+      plan: `A slow, unhurried way to ${input.wish.text.toLowerCase()}, with rest stops along the way.`,
+      needsCareTeam: true,
+      careTeamNote: "about the outing.",
+      quests,
+    };
   }
 }

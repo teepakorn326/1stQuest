@@ -1,36 +1,48 @@
 import type { ActivityItem } from "@/lib/db/queries/activity";
 
-const quote = (s: unknown) => (typeof s === "string" && s ? `“${s}”` : "");
+const str = (v: unknown) => (typeof v === "string" && v ? v : null);
 
-/** Plain-language line for a feed item. Actor name is rendered separately in bold. */
-export function describeActivity(a: Pick<ActivityItem, "type" | "payload">): string {
+/** Verb plus the thing acted on (rendered bold), e.g. { verb: "finished", object: "Find a beach" }. */
+export function activityParts(a: Pick<ActivityItem, "type" | "payload">): { verb: string; object: string | null } {
   const p = a.payload ?? {};
   switch (a.type) {
     case "circle_created":
-      return "started the circle";
+      return { verb: "started the circle", object: null };
     case "member_joined":
-      return p.role === "doctor" ? "joined as care team" : "joined the circle";
+      return { verb: p.role === "doctor" ? "joined as care team" : "joined the circle", object: null };
     case "mobility_updated":
-      return "updated how things are getting around";
+      return { verb: "updated how things are getting around", object: null };
     case "wish_added":
-      return `added a new wish ${quote(p.text)}`.trim();
+      return { verb: "added a new wish", object: str(p.text) };
     case "plan_generated":
-      return `made a plan for ${quote(p.wish)}`.trim();
+      return { verb: "made a plan for", object: str(p.wish) };
     case "quest_claimed":
-      return `took ${quote(p.title)}`.trim();
+      return { verb: "took", object: str(p.title) };
     case "quest_done":
-      return `finished ${quote(p.title)}`.trim();
+      return { verb: "finished", object: str(p.title) };
     case "photos_added":
-      return `added ${typeof p.count === "number" && p.count > 1 ? `${p.count} photos` : "a photo"} to ${quote(p.wish)}`.trim();
+      return { verb: `added ${typeof p.count === "number" && p.count > 1 ? `${p.count} photos` : "a photo"} to`, object: str(p.wish) };
     case "card_created":
-      return `made a new card ${quote(p.title)}`.trim();
+      return { verb: "made a new card", object: str(p.title) };
     case "card_message":
-      return `left a message on ${quote(p.title)}`.trim();
+      return { verb: "left a message on", object: str(p.title) };
     case "card_levelled_up":
-      return `helped ${quote(p.title)} shine`.trim();
+      return { verb: "helped a card shine:", object: str(p.title) };
     default:
-      return "did something in the circle";
+      return { verb: "did something in the circle", object: null };
   }
+}
+
+/** Plain-language line for a feed item. Actor name is rendered separately in bold. */
+export function describeActivity(a: Pick<ActivityItem, "type" | "payload">): string {
+  const { verb, object } = activityParts(a);
+  return object ? `${verb} “${object}”` : verb;
+}
+
+/** The wish an item belongs to, when it's not already the object. */
+export function activityContext(a: Pick<ActivityItem, "type" | "payload">): string | null {
+  if (a.type === "plan_generated" || a.type === "photos_added" || a.type === "wish_added") return null;
+  return str((a.payload ?? {}).wish);
 }
 
 export function timeAgo(date: Date, now = new Date()): string {

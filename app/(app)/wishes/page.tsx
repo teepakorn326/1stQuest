@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChatIcon, PlusIcon } from "@/components/icons";
+import { LiveRefresh } from "@/components/LiveRefresh";
+import { realtimeConfig } from "@/lib/realtime";
 import { WishRow } from "@/components/WishRow";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -18,6 +20,7 @@ export default async function WishesPage() {
   return (
     <main className="flex flex-col">
       <PageHeader title={`${circle.patient_name}’s wishes`} />
+      <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
       <div className="flex flex-col gap-4 px-5 pt-2 pb-5">
         <ButtonLink href="/wishes/new">
           <PlusIcon size={22} /> Add a wish
