@@ -15,7 +15,7 @@ export const POST = route<{ id: string }>(async (_req, { params, log }) => {
   const wish = await findWishForMember(z.uuid().parse(params.id), user.id);
   const viewer = { userId: user.id, role: wish?.viewer_role ?? null };
   if (!wish || !canSeeWish(viewer, wish, wish.viewer_ids)) throw notFound();
-  if (wish.author_id !== user.id && viewer.role === "doctor") throw forbidden("The family makes plans; you can leave notes on them.");
+  if (wish.author_id !== user.id && viewer.role === "doctor") throw forbidden("The family makes plans; you can take quests on them.");
 
   const [circle, current] = await Promise.all([findCircleForMember(wish.circle_id, user.id), findLatestPlan(wish.id)]);
   if (!circle) throw notFound();

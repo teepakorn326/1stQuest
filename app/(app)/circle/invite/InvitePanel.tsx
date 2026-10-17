@@ -49,7 +49,7 @@ export function InvitePanel({ patientName, options }: { patientName: string; opt
         <p className="mt-2.5 mb-0 text-sm text-ink-3">
           {role === "family"
             ? `They can see shared wishes, take quests and add to cards. ${patientName} decides who sees each wish.`
-            : `Doctors see the wishes ${patientName} shares with the circle and can leave notes on plans.`}
+            : `Doctors see the wishes ${patientName} shares with the circle and can take quests, like the ones marked for the care team.`}
         </p>
       </fieldset>
 
