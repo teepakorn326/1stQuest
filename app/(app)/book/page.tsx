@@ -35,7 +35,7 @@ const TONES = ["bg-[#FFE3B8]", "bg-[#FFD497]", "bg-[#FFDFAE]"];
 
 function Cover({ card, className }: { card: BookCard; className?: string }) {
   return (
-    <div className={clsx("relative overflow-hidden", card.level > 0 ? "gold-frame-cover border-[3px]" : "border-2 border-white", className)}>
+    <div className={clsx("overflow-hidden", card.level > 0 ? "gold-frame-cover border-[3px]" : "border-2 border-white", className)}>
       {card.cover_media_id ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={`/api/v1/media/${card.cover_media_id}`} alt="" className="h-full w-full object-cover" />
