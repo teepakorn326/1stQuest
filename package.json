@@ -25,6 +25,7 @@
     "@react-pdf/renderer": "^4.9.0",
     "@supabase/supabase-js": "^2.118.0",
     "clsx": "^2.1.1",
+    "fix-webm-duration": "1.0.6",
     "next": "15.5.28",
     "postgres": "^3.4.9",
     "qrcode": "^1.5.4",

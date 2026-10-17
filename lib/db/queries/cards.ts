@@ -185,7 +185,7 @@ export async function setCardShare(cardId: string, authorId: string, token: stri
 export type SharedCard = Pick<CardRow, "id" | "title" | "body" | "category" | "happened_on" | "place" | "level"> & {
   patient_name: string;
   photo_ids: string[];
-  recordings: { id: string; kind: "voice" | "video" }[];
+  recordings: { id: string; kind: "voice" | "video"; duration_sec: number | null }[];
 };
 
 /** What a public share link shows: the card itself and nothing else from the circle. */
@@ -194,7 +194,7 @@ export async function findSharedCard(token: string): Promise<SharedCard | null> 
     select c.id, c.title, c.body, c.category, c.happened_on, c.place, c.level, ci.patient_name,
       coalesce((select array_agg(m.id order by (m.id = c.cover_media_id) desc, m.created_at)
                 from media m where m.card_id = c.id and m.kind = 'photo'), '{}') as photo_ids,
-      coalesce((select json_agg(json_build_object('id', m.id, 'kind', m.kind) order by m.created_at)
+      coalesce((select json_agg(json_build_object('id', m.id, 'kind', m.kind, 'duration_sec', m.duration_sec) order by m.created_at)
                 from media m where m.card_id = c.id and m.kind <> 'photo'), '[]') as recordings
     from cards c join circles ci on ci.id = c.circle_id
     where c.share_token = ${token}`;

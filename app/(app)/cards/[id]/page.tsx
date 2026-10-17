@@ -13,6 +13,7 @@ import { CardActions } from "./CardActions";
 import { ShareCard } from "./ShareCard";
 import { appUrl } from "@/lib/env";
 import { GoldCardFrame } from "@/components/GoldCardFrame";
+import { VoicePlayer } from "@/components/VoicePlayer";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +83,7 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
       </header>
 
       <div className="flex flex-col gap-3 px-5 pt-1.5 pb-5">
-        <GoldCardFrame cardId={card.id} level={card.level}>
+        <GoldCardFrame cardId={card.id} level={card.level} messageCount={card.messages.length}>
           <PhotoGrid ids={card.photo_ids} />
           <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3">
             <h1 className="m-0 text-xl leading-tight font-bold">{card.title}</h1>
@@ -99,7 +100,7 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
                   {r.duration_sec ? ` · ${Math.floor(r.duration_sec / 60)}:${String(r.duration_sec % 60).padStart(2, "0")}` : ""}
                 </span>
                 {r.kind === "voice" ? (
-                  <audio controls preload="none" src={`/api/v1/media/${r.id}`} className="w-full" />
+                  <VoicePlayer src={`/api/v1/media/${r.id}`} durationSec={r.duration_sec} />
                 ) : (
                   <video controls playsInline preload="metadata" src={`/api/v1/media/${r.id}`} className="max-h-64 w-full rounded-lg bg-black" />
                 )}

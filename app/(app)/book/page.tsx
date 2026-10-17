@@ -120,7 +120,7 @@ function Timeline({ cards, hemisphere }: { cards: BookCard[]; hemisphere: "north
               href={`/cards/${c.id}`}
               className={clsx(
                 "flex gap-3.5 rounded-2xl bg-surface p-3 text-ink no-underline hover:text-ink",
-                c.level > 0 ? "border-[3px] border-gold" : "border border-line",
+                c.level > 0 ? "gold-glow border-[3px] border-gold" : "border border-line",
               )}
             >
               <Cover card={c} className="h-[92px] w-[76px] shrink-0 rounded-[10px] !border-0 bg-[#FFD497]" />

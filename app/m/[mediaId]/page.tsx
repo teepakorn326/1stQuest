@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { BookIcon } from "@/components/icons";
 import { getUser } from "@/lib/auth/session";
 import { findMediaForMember } from "@/lib/db/queries/media";
+import { VoicePlayer } from "@/components/VoicePlayer";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function MediaLinkPage({ params }: { params: Promise<{ medi
         {media.card_title && <h1 className="m-0 text-2xl leading-tight font-bold">{media.card_title}</h1>}
       </div>
       {media.kind === "voice" ? (
-        <audio controls autoPlay src={src} className="w-full" />
+        <VoicePlayer src={src} durationSec={media.duration_sec} />
       ) : media.kind === "video" ? (
         <video controls playsInline autoPlay src={src} className="w-full rounded-2xl bg-black" />
       ) : (

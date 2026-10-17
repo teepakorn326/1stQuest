@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { SparkleIcon } from "@/components/icons";
 
@@ -14,11 +14,26 @@ const BURST = [
 ];
 
 /**
- * The card's frame. Gold cards get a gold border and a gentle shimmer; the moment a card turns
- * gold it pulses, glows, sweeps with light and throws sparkles (all off with reduced motion).
+ * The card's frame.
+ * - Gold cards: gold border, a slowly turning gold aura behind the card, and a gentle shimmer.
+ * - Turning gold: the card pulses, glows, sweeps with light and throws sparkles; the aura flares.
+ * - First comment: the card makes one full turn (for everyone viewing: it reacts to the count).
+ * All motion is off with reduced-motion settings.
  */
-export function GoldCardFrame({ cardId, level, children }: { cardId: string; level: number; children: React.ReactNode }) {
+export function GoldCardFrame({
+  cardId,
+  level,
+  messageCount,
+  children,
+}: {
+  cardId: string;
+  level: number;
+  messageCount: number;
+  children: React.ReactNode;
+}) {
   const [celebrating, setCelebrating] = useState(false);
+  const [spinning, setSpinning] = useState(false);
+  const prevCount = useRef(messageCount);
   const gold = level > 0 || celebrating;
 
   useEffect(() => {
@@ -31,23 +46,41 @@ export function GoldCardFrame({ cardId, level, children }: { cardId: string; lev
     return () => window.removeEventListener(GOLD_EVENT, onGold);
   }, [cardId]);
 
+  useEffect(() => {
+    if (prevCount.current === 0 && messageCount > 0) {
+      setSpinning(true);
+      const t = setTimeout(() => setSpinning(false), 1300);
+      prevCount.current = messageCount;
+      return () => clearTimeout(t);
+    }
+    prevCount.current = messageCount;
+  }, [messageCount]);
+
   return (
-    <div className="relative">
-      <article
-        className={clsx(
-          "relative flex flex-col overflow-hidden rounded-[20px] border-4 bg-surface transition-colors duration-700",
-          gold ? "gold-card border-gold" : "border-[#F3E2C6]",
-          celebrating && "gold-celebrate",
-        )}
-        data-level={gold ? 1 : 0}
-        data-testid="card-frame"
-      >
-        {children}
-        {gold && <span aria-hidden className="gold-sheen" />}
-      </article>
+    <div className="card-spin-stage relative isolate">
+      {gold && <span aria-hidden className={clsx("gold-aura", celebrating && "gold-celebrate-aura")} data-testid="gold-aura" />}
+      <div className={clsx("relative z-10", spinning && "card-spin")} data-testid="card-spin" data-spinning={spinning || undefined}>
+        <article
+          className={clsx(
+            "relative flex flex-col overflow-hidden rounded-[20px] border-4 bg-surface transition-colors duration-700",
+            gold ? "gold-card border-gold" : "border-[#F3E2C6]",
+            celebrating && "gold-celebrate",
+          )}
+          data-level={gold ? 1 : 0}
+          data-testid="card-frame"
+        >
+          {children}
+          {gold && <span aria-hidden className="gold-sheen" />}
+        </article>
+      </div>
       {celebrating &&
         BURST.map((b, i) => (
-          <span key={i} aria-hidden className="gold-spark absolute text-gold" style={{ top: b.top, left: b.left, right: b.right, bottom: b.bottom, animationDelay: b.delay }}>
+          <span
+            key={i}
+            aria-hidden
+            className="gold-spark absolute z-20 text-gold"
+            style={{ top: b.top, left: b.left, right: b.right, bottom: b.bottom, animationDelay: b.delay }}
+          >
             <SparkleIcon size={b.size} />
           </span>
         ))}

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import fixWebmDuration from "fix-webm-duration";
 import { MicIcon } from "@/components/icons";
+import { VoicePlayer } from "@/components/VoicePlayer";
 import { LIMITS } from "@/lib/mediaLimits";
 
 export type Recording = { blob: Blob; type: string; durationSec: number; url: string; kind: "voice" | "video" };
@@ -35,12 +37,15 @@ export function VoiceRecorder({ onDone, onCancel }: { onDone: (r: Recording) => 
       const mr = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
       const chunks: Blob[] = [];
       mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-      mr.onstop = () => {
+      mr.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         if (tick.current) clearInterval(tick.current);
         const mime = (mr.mimeType || type || "audio/webm").split(";")[0]!;
-        const blob = new Blob(chunks, { type: mime });
         const durationSec = Math.min(max, (Date.now() - started.current) / 1000);
+        let blob = new Blob(chunks, { type: mime });
+        // Chrome's MediaRecorder writes WebM with no duration, so players show the wrong length.
+        // Write the real duration into the header before upload.
+        if (mime === "audio/webm") blob = await fixWebmDuration(blob, durationSec * 1000, { logger: false }).catch(() => blob);
         onDone({ blob, type: mime, durationSec, url: URL.createObjectURL(blob), kind: "voice" });
       };
       rec.current = mr;
@@ -125,7 +130,7 @@ export function RecordingPreview({ r, onRemove }: { r: Recording; onRemove?: () 
         )}
       </div>
       {r.kind === "voice" ? (
-        <audio controls src={r.url} className="w-full" />
+        <VoicePlayer src={r.url} durationSec={r.durationSec} />
       ) : (
         <video controls playsInline src={r.url} className="max-h-56 w-full rounded-lg bg-black" />
       )}

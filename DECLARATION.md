@@ -62,11 +62,11 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
   - Collection: six category slots. Filled slots show fanned covers and a count; empty slots show a gentle prompt and “Add a wish”.
   - Timeline: cards grouped by “Month · season”, with seasons for the southern hemisphere.
 - Voice notes and video, on Add moments and on any card.
-  - Voice notes are recorded in the browser (MediaRecorder), up to 5 minutes, and stop by themselves at 5:00.
+  - Voice notes are recorded in the browser (MediaRecorder), up to 5 minutes, and stop by themselves at 5:00. Chrome records WebM files without a length, so the real duration is written into the file before upload. The app’s own voice player shows the recorded length (“0:03 / 0:09”) even for older files.
   - Videos are picked from the phone (or recorded with its camera), up to 2 minutes and 50MB.
   - They upload the same way as photos. The server checks the stored file’s real type and size and keeps it as-is at `<circleId>/<mediaId>.<ext>`.
   - They play on the card from the same gated media URL.
-- Card level-up: when 3 or more different members have contributed to a card (made it, left a message, or added a photo, voice note or video), it turns gold everywhere it appears. It gets a “Gold card · the family loves this one” chip and posts once to the feed. The moment it turns gold, the card pulses, glows, sweeps with light and throws sparkles, and the person whose message tipped it over sees a one-time “✨ Levelled up” toast. Gold cards keep a gentle shimmer. All motion is off with reduced-motion settings.
+- Card level-up: when 3 or more different members have contributed to a card (made it, left a message, or added a photo, voice note or video), it turns gold everywhere it appears. It gets a “Gold card · the family loves this one” chip and posts once to the feed. The moment it turns gold, the card pulses, glows, sweeps with light and throws sparkles, and the person whose message tipped it over sees a one-time “✨ Levelled up” toast. Gold cards keep a gentle shimmer and a soft, slowly turning gold aura around the card (a glow in the book’s timeline). When a card gets its first comment, it does one full spin for everyone viewing it. All motion is off with reduced-motion settings.
 - Memorial mode (owner only): a confirmation screen explains what changes; it can be undone for 30 days.
   - Home becomes “Remembering <name>” with “Share a memory” and the newest cards (who shared each, and what it holds).
   - The menu becomes Home / Book / Family.

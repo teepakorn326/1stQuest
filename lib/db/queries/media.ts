@@ -86,12 +86,19 @@ export async function findMediaPathForMember(mediaId: string, viewerId: string):
   return row?.path ?? null;
 }
 
-export type MediaForViewer = { id: string; kind: MediaKind; card_id: string | null; card_title: string | null; uploader_name: string | null };
+export type MediaForViewer = {
+  id: string;
+  kind: MediaKind;
+  duration_sec: number | null;
+  card_id: string | null;
+  card_title: string | null;
+  uploader_name: string | null;
+};
 
 /** A media item plus its card, if this viewer may see it (same rule as findMediaPathForMember). */
 export async function findMediaForMember(mediaId: string, viewerId: string): Promise<MediaForViewer | null> {
   const [row] = await sql<MediaForViewer[]>`
-    select m.id, m.kind, m.card_id, c.title as card_title, u.name as uploader_name
+    select m.id, m.kind, m.duration_sec, m.card_id, c.title as card_title, u.name as uploader_name
     from media m
     join memberships mem on mem.circle_id = m.circle_id and mem.user_id = ${viewerId}
     left join cards c on c.id = m.card_id
