@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CategoryIcon, ChevronLeft, SparkleIcon } from "@/components/icons";
+import { ChevronLeft, SparkleIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { Avatar } from "@/components/ui/Avatar";
 import { canSeeCard } from "@/lib/authz";
-import { CATEGORY_LABEL } from "@/lib/activityText";
 import { requirePageUser } from "@/lib/auth/session";
 import { findCardForMember } from "@/lib/db/queries/cards";
 import { findCircleForMember } from "@/lib/db/queries/circles";

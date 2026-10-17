@@ -1,8 +1,8 @@
 import "server-only";
 import { sql, type Tx } from "@/lib/db/client";
-import type { NotificationRow } from "@/lib/db/types";
+import type { NotificationRow, Role } from "@/lib/db/types";
 
-export type NotifyKind = "wish" | "plan" | "card" | "memory" | "media";
+export type NotifyKind = "wish" | "plan" | "card" | "memory" | "media" | "memorial_asked" | "memorial_confirmed" | "memorial_switched" | "memorial_cancelled";
 
 export type SmsRecipient = { user_id: string; phone: string };
 
@@ -34,6 +34,31 @@ export async function notifyCircle(
     )
     select u.id as user_id, u.phone, u.sms_opt_in from inserted i join users u on u.id = i.user_id`;
   return rows.filter((r) => r.sms_opt_in && r.phone).map((r) => ({ user_id: r.user_id, phone: r.phone! }));
+}
+
+/**
+ * Notifies chosen members of a circle (all but the actor, optionally only some roles or users).
+ * Returns the phone numbers to text: opted-in members, plus `alwaysText` (the owner, for a
+ * memorial request they may need to cancel) whenever they have a number.
+ */
+export async function notifyMembers(
+  tx: Tx,
+  n: { circleId: string; actorId: string; kind: NotifyKind; title: string; url: string; roles?: Role[]; userIds?: string[]; alwaysText?: string | null },
+): Promise<SmsRecipient[]> {
+  const rows = await tx<{ user_id: string; phone: string | null; sms_opt_in: boolean }[]>`
+    with recipients as (
+      select m.user_id from memberships m
+      where m.circle_id = ${n.circleId} and m.user_id <> ${n.actorId}
+        ${n.roles ? tx`and m.role in ${tx(n.roles)}` : tx``}
+        ${n.userIds ? tx`and m.user_id in ${tx(n.userIds.length ? n.userIds : ["00000000-0000-0000-0000-000000000000"])}` : tx``}
+    ), inserted as (
+      insert into notifications (user_id, circle_id, actor_id, kind, title, url)
+      select user_id, ${n.circleId}, ${n.actorId}, ${n.kind}, ${n.title.slice(0, 200)}, ${n.url}
+      from recipients
+      returning user_id
+    )
+    select u.id as user_id, u.phone, u.sms_opt_in from inserted i join users u on u.id = i.user_id`;
+  return rows.filter((r) => r.phone && (r.sms_opt_in || r.user_id === n.alwaysText)).map((r) => ({ user_id: r.user_id, phone: r.phone! }));
 }
 
 export type NotificationItem = NotificationRow & { actor_name: string | null; patient_name: string };

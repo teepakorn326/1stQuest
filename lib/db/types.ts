@@ -49,6 +49,8 @@ export interface CircleRow {
   hemisphere: Hemisphere;
   mode: CircleMode;
   mode_changed_at: Date | null;
+  /** Family member the owner named to switch the book to a memorial album if they can't. */
+  trusted_user_id: string | null;
   created_at: Date;
 }
 
