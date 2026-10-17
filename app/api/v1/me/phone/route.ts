@@ -9,7 +9,7 @@ const Body = z.object({
     .string()
     .trim()
     .transform((v) => v.replace(/[\s().-]/g, ""))
-    .refine((v) => v === "" || /^\+[1-9]\d{7,14}$/.test(v), "Use the international format, starting with + and the country code (e.g. +61 4…, +66 8…).")
+    .refine((v) => v === "" || /^\+[1-9]\d{7,14}$/.test(v), "That number doesn’t look right. Check the number and the country.")
     .transform((v) => v || null),
   optIn: z.boolean(),
 });
