@@ -29,6 +29,8 @@ SESSION_SECRET=<openssl rand -base64 48>
 
 Or point both URLs at your Supabase project instead (then drop `DB_POOL_MAX`).
 
+To keep `pnpm migrate`/`seed` pointed at Supabase but run `pnpm dev` on PGlite, put the PGlite `DATABASE_URL` and `DB_POOL_MAX=1` in `.env.development.local` (Next.js loads it for `next dev` only). DB-backed tests use `TEST_DATABASE_URL` and are skipped when it's unset, so they never touch the app database.
+
 With `EMAIL_FROM` unset, sign-in runs in **dev mode**: the sign-in link is shown on screen instead of emailed. Seeded accounts: `ploy@wishcircle.demo` (owner), `tom@`, `krit@`, `may@` (family), `lin@` (doctor).
 
 ## Environment variables
@@ -44,8 +46,11 @@ With `EMAIL_FROM` unset, sign-in runs in **dev mode**: the sign-in link is shown
 | `SUPABASE_ANON_KEY` | Phase 3 | Public key for Realtime subscriptions. |
 | `RESEND_API_KEY` | for email | Resend API key. |
 | `EMAIL_FROM` | for email | e.g. `Wish Circle <hello@yourdomain>` (domain verified in Resend). Unset = dev mode. |
-| `ANTHROPIC_API_KEY` | Phase 2 | For “Talk it through”, plans and card text. |
+| `ANTHROPIC_API_KEY` | yes | For “Talk it through”, plans and card text. |
 | `DB_POOL_MAX` | local only | `1` for PGlite. Ignored on Vercel (always 1). |
+| `TEST_DATABASE_URL` | tests | Database for DB-backed tests (e.g. local PGlite). |
+| `ANTHROPIC_MODEL` | optional | Override the plan/card model (default `claude-sonnet-5-5`). Chat always uses `claude-haiku-5-5`. |
+| `AI_PROVIDER` | tests only | `mock` swaps in the deterministic `MockAiProvider`. Never set in production. |
 
 ## Deploy (Vercel + Supabase)
 

@@ -51,3 +51,18 @@ export const MOBILITY_LABEL = {
   wheelchair: "Uses a wheelchair",
   mostly_resting: "Mostly resting",
 } as const;
+
+export const CATEGORY_LABEL = {
+  places: "Places",
+  tastes: "Tastes",
+  people: "People",
+  music: "Music",
+  nature: "Nature",
+  legacy: "Legacy",
+} as const;
+
+export const VISIBILITY_LABEL = {
+  circle: "Everyone in the circle",
+  chosen: "Only people I choose",
+  private: "Just me for now",
+} as const;

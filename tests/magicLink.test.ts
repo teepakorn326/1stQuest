@@ -1,5 +1,4 @@
-// Integration test: needs a Postgres at DATABASE_URL with migrations applied (e.g. `pnpm db:local && pnpm migrate`).
-import "dotenv/config";
+// Integration test: needs TEST_DATABASE_URL with migrations applied (e.g. `pnpm db:local`, then migrate against it).
 import { afterAll, describe, expect, it } from "vitest";
 import postgres from "postgres";
 import { hashToken, randomToken } from "@/lib/auth/tokens";

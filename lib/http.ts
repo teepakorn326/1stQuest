@@ -48,9 +48,10 @@ export function route<P = Record<string, never>>(handler: Handler<P>) {
       }
       if (err instanceof ZodError) {
         reqLog.info("request", { status: 400, code: "invalid_input", ms: Date.now() - started });
+        // Messages are written for people; the field path goes to the logs, not the UI.
         const first = err.issues[0];
-        const message = first ? `${first.path.join(".") || "input"}: ${first.message}` : "Invalid input.";
-        return errorResponse(400, "invalid_input", message, requestId);
+        reqLog.info("invalid input", { path: first?.path.join("."), issue: first?.message });
+        return errorResponse(400, "invalid_input", first?.message ?? "Invalid input.", requestId);
       }
       reqLog.error("unhandled error", { error: err instanceof Error ? err.message : String(err), ms: Date.now() - started });
       return errorResponse(500, "internal", "Something went wrong. Please try again.", requestId);

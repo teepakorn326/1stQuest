@@ -1,4 +1,4 @@
-import { BookIcon, CategoryIcon, PlusIcon } from "@/components/icons";
+import { BookIcon, PlusIcon } from "@/components/icons";
 import { CircleSwitcher } from "@/components/CircleSwitcher";
 import { Greeting } from "@/components/Greeting";
 import { MobilityCard } from "@/components/MobilityCard";
@@ -9,16 +9,10 @@ import { describeActivity, timeAgo } from "@/lib/activityText";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listActivity } from "@/lib/db/queries/activity";
 import { listMyCircles } from "@/lib/db/queries/circles";
-import { listVisibleWishes, type WishSummary } from "@/lib/db/queries/wishes";
+import { listVisibleWishes } from "@/lib/db/queries/wishes";
+import { WishRow } from "@/components/WishRow";
 
 export const dynamic = "force-dynamic";
-
-function wishSubline(w: WishSummary): string {
-  if (w.active_quest?.claimer_name) return `${w.active_quest.claimer_name} is on “${w.active_quest.title}”`;
-  if (w.open_quests === 1) return "A quest is waiting for someone";
-  if (w.open_quests > 1) return `${w.open_quests} quests waiting for someone`;
-  return w.visibility === "private" ? "Just for you for now" : "Ready for a plan";
-}
 
 export default async function HomePage() {
   const user = await requirePageUser("/home");
@@ -65,7 +59,7 @@ export default async function HomePage() {
         canEdit={canEditCircle({ userId: user.id, role: circle.role })}
       />
 
-      <ButtonLink href="/wishes" className="h-14">
+      <ButtonLink href="/wishes/new" className="h-14">
         <PlusIcon size={22} /> Add a wish
       </ButtonLink>
 
@@ -76,18 +70,7 @@ export default async function HomePage() {
             No wishes yet. There’s no rush. Add one whenever something comes to mind.
           </p>
         ) : (
-          wishes.map((w) => (
-            // Wish detail lands in Phase 2; until then the row isn't a link.
-            <div key={w.id} className="flex items-center gap-3.5 rounded-[14px] border border-line bg-surface p-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                <CategoryIcon category={w.category} />
-              </div>
-              <div className="flex flex-1 flex-col gap-0.5">
-                <span className="text-base font-bold">{w.text}</span>
-                <span className="text-sm text-ink-3">{wishSubline(w)}</span>
-              </div>
-            </div>
-          ))
+          wishes.map((w) => <WishRow key={w.id} wish={w} />)
         )}
       </section>
 

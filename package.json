@@ -20,6 +20,7 @@
     "db:local": "pglite-server --db=./.pglite --port=54329 --max-connections=10"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "@supabase/supabase-js": "^2.118.0",
     "clsx": "^2.1.1",
     "next": "15.5.28",

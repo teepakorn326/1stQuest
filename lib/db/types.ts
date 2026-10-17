@@ -169,5 +169,6 @@ export interface ConversationMessageRow {
   conversation_id: string;
   role: "user" | "assistant";
   content: string;
+  suggestion: { text: string; category: Category } | null;
   created_at: Date;
 }

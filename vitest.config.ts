@@ -5,6 +5,8 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     environment: "node",
+    setupFiles: ["tests/setup.ts"],
+    fileParallelism: false,
     env: { SESSION_SECRET: "test-secret-test-secret-test-secret-000" },
   },
   resolve: {

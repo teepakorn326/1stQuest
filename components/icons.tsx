@@ -55,3 +55,28 @@ const CATEGORY_PATHS: Record<string, React.ReactNode> = {
 export const CategoryIcon = ({ category, size, className }: P & { category: string }) => (
   <svg {...base(size)} className={className}>{CATEGORY_PATHS[category] ?? CATEGORY_PATHS.places}</svg>
 );
+
+export const CloseIcon = ({ size, className }: P) => (
+  <svg {...base(size)} strokeWidth={2} className={className}><path d="M6 6l12 12M18 6L6 18" /></svg>
+);
+export const ChatIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M4 5h16v11H9l-5 4z" /></svg>
+);
+export const EyeIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>
+);
+export const LockIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+);
+export const MicIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+);
+export const SendIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M4 12l16-8-6 16-2-7z" /></svg>
+);
+export const CheckIcon = ({ size, className }: P) => (
+  <svg {...base(size)} strokeWidth={2.2} className={className}><path d="M5 12l5 5 9-10" /></svg>
+);
+export const AlertIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18h.01" /></svg>
+);
