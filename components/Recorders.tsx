@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import fixWebmDuration from "fix-webm-duration";
 import { MicIcon } from "@/components/icons";
 import { VoicePlayer } from "@/components/VoicePlayer";
+import { Waveform } from "@/components/Waveform";
 import { LIMITS } from "@/lib/mediaLimits";
 
 export type Recording = { blob: Blob; type: string; durationSec: number; url: string; kind: "voice" | "video" };
@@ -22,10 +23,45 @@ export function VoiceRecorder({ onDone, onCancel }: { onDone: (r: Recording) => 
   const started = useRef(0);
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
   const max = LIMITS.voice.maxSeconds!;
+  const [levels, setLevels] = useState<number[]>(() => Array(30).fill(6));
+  const meter = useRef<{ ctx: AudioContext; raf: number } | null>(null);
+
+  // Live waveform: sample the microphone level and scroll the bars, like the design's player.
+  function startMeter(stream: MediaStream) {
+    try {
+      const ctx = new AudioContext();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const data = new Uint8Array(analyser.fftSize);
+      let prev = 0;
+      const loop = (t: number) => {
+        if (t - prev > 90) {
+          prev = t;
+          analyser.getByteTimeDomainData(data);
+          let peak = 0;
+          for (const v of data) peak = Math.max(peak, Math.abs(v - 128));
+          const h = Math.round(6 + Math.min(1, peak / 64) * 18);
+          setLevels((cur) => [...cur.slice(1), h]);
+        }
+        if (meter.current) meter.current.raf = requestAnimationFrame(loop);
+      };
+      meter.current = { ctx, raf: requestAnimationFrame(loop) };
+    } catch {
+      // No Web Audio: the bars just stay flat.
+    }
+  }
+  function stopMeter() {
+    if (!meter.current) return;
+    cancelAnimationFrame(meter.current.raf);
+    void meter.current.ctx.close();
+    meter.current = null;
+  }
 
   useEffect(() => {
     return () => {
       if (tick.current) clearInterval(tick.current);
+      stopMeter();
       rec.current?.stream.getTracks().forEach((t) => t.stop());
     };
   }, []);
@@ -38,6 +74,7 @@ export function VoiceRecorder({ onDone, onCancel }: { onDone: (r: Recording) => 
       const chunks: Blob[] = [];
       mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       mr.onstop = async () => {
+        stopMeter();
         stream.getTracks().forEach((t) => t.stop());
         if (tick.current) clearInterval(tick.current);
         const mime = (mr.mimeType || type || "audio/webm").split(";")[0]!;
@@ -52,6 +89,7 @@ export function VoiceRecorder({ onDone, onCancel }: { onDone: (r: Recording) => 
       started.current = Date.now();
       setSeconds(0);
       mr.start(1000);
+      startMeter(stream);
       setState("recording");
       tick.current = setInterval(() => {
         const s = (Date.now() - started.current) / 1000;
@@ -68,12 +106,14 @@ export function VoiceRecorder({ onDone, onCancel }: { onDone: (r: Recording) => 
       {state === "error" ? (
         <p className="m-0 text-[15px] text-warm-ink">We couldn’t use the microphone. Check the browser’s permission and try again.</p>
       ) : state === "recording" ? (
-        <div className="flex items-center gap-3">
-          <span className="h-3 w-3 animate-pulse rounded-full bg-[#C0392B]" aria-hidden />
-          <span className="flex-1 text-base font-bold" role="timer" aria-live="off">
-            Recording {formatDuration(seconds)}
+        <div className="flex items-center gap-2.5 rounded-[14px] bg-[#FFF7EA] px-2.5 py-2" data-testid="recording-live">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#C0392B]/10" aria-hidden>
+            <span className="h-3.5 w-3.5 animate-pulse rounded-full bg-[#C0392B]" />
           </span>
-          <span className="text-sm text-ink-3">up to {formatDuration(max)}</span>
+          <Waveform bars={levels} live />
+          <span className="shrink-0 text-sm font-bold text-ink-2 tabular-nums" role="timer" aria-live="off">
+            {formatDuration(seconds)} / {formatDuration(max)}
+          </span>
         </div>
       ) : (
         <p className="m-0 text-[15px] text-ink-2">Tap record, then speak. Up to 5 minutes.</p>
@@ -96,43 +136,18 @@ export function VoiceRecorder({ onDone, onCancel }: { onDone: (r: Recording) => 
   );
 }
 
-/** Reads a picked video's duration and enforces the 2-minute / 50MB limits before upload. */
-export async function readVideo(file: File): Promise<Recording> {
-  const limit = LIMITS.video;
-  if (!limit.types.includes(file.type)) throw new Error("Videos can be MP4, WebM or MOV.");
-  if (file.size > limit.maxBytes) throw new Error(limit.label);
-  const url = URL.createObjectURL(file);
-  const durationSec = await new Promise<number>((resolve, reject) => {
-    const v = document.createElement("video");
-    v.preload = "metadata";
-    v.onloadedmetadata = () => resolve(v.duration);
-    v.onerror = () => reject(new Error("We couldn’t read that video."));
-    v.src = url;
-  });
-  if (!Number.isFinite(durationSec) || durationSec > limit.maxSeconds! + 1) {
-    URL.revokeObjectURL(url);
-    throw new Error(limit.label);
-  }
-  return { blob: file, type: file.type, durationSec, url, kind: "video" };
-}
-
 export function RecordingPreview({ r, onRemove }: { r: Recording; onRemove?: () => void }) {
   return (
-    <div className="flex flex-col gap-2 rounded-[14px] border border-line bg-surface p-3">
-      <div className="flex items-center justify-between text-sm text-ink-2">
-        <span className="font-bold">
-          {r.kind === "voice" ? "Voice note" : "Video"} · {formatDuration(r.durationSec)}
-        </span>
-        {onRemove && (
-          <button type="button" onClick={onRemove} className="min-h-11 px-2 font-bold text-primary">
-            Remove
-          </button>
-        )}
-      </div>
+    <div className="flex flex-col gap-1.5">
       {r.kind === "voice" ? (
-        <VoicePlayer src={r.url} durationSec={r.durationSec} />
+        <VoicePlayer src={r.url} durationSec={r.durationSec} label="Voice note" />
       ) : (
         <video controls playsInline src={r.url} className="max-h-56 w-full rounded-lg bg-black" />
+      )}
+      {onRemove && (
+        <button type="button" onClick={onRemove} className="min-h-9 self-end px-1 text-sm font-bold text-primary">
+          Remove
+        </button>
       )}
     </div>
   );

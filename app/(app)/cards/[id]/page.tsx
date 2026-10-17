@@ -93,19 +93,21 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
               {card.place ? ` · ${card.place}` : ""} ·{" "}
               {card.happened_on.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}
             </p>
-            {card.recordings.map((r) => (
-              <div key={r.id} className="flex flex-col gap-1.5 rounded-[14px] bg-[#FFF7EA] p-2.5" data-testid="recording">
-                <span className="text-sm text-ink-2">
-                  {r.kind === "voice" ? "Voice note" : "Video"} from {r.uploader_id === user.id ? "you" : (r.uploader_name ?? "someone")}
-                  {r.duration_sec ? ` · ${Math.floor(r.duration_sec / 60)}:${String(r.duration_sec % 60).padStart(2, "0")}` : ""}
-                </span>
-                {r.kind === "voice" ? (
-                  <VoicePlayer src={`/api/v1/media/${r.id}`} durationSec={r.duration_sec} />
-                ) : (
+            {card.recordings.map((r) =>
+              r.kind === "voice" ? (
+                <div key={r.id} data-testid="recording">
+                  <VoicePlayer
+                    src={`/api/v1/media/${r.id}`}
+                    durationSec={r.duration_sec}
+                    label={r.uploader_id === user.id ? "You" : (r.uploader_name ?? undefined)}
+                  />
+                </div>
+              ) : (
+                <div key={r.id} className="flex flex-col gap-1.5" data-testid="recording">
                   <video controls playsInline preload="metadata" src={`/api/v1/media/${r.id}`} className="max-h-64 w-full rounded-lg bg-black" />
-                )}
-              </div>
-            ))}
+                </div>
+              ),
+            )}
             {card.wish_id && card.wish_text && (
               <Link href={`/wishes/${card.wish_id}`} className="text-sm font-bold no-underline">
                 From the wish: {card.wish_text}

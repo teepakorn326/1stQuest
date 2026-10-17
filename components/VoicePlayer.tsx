@@ -1,12 +1,13 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import clsx from "clsx";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Waveform, barsFor } from "@/components/Waveform";
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 /**
- * Voice note player that always shows the right length: it uses the length we recorded, and
- * nudges browsers that can't read a WebM file's duration into working it out (for seeking).
+ * Voice note player in the design's style: round play button, waveform, "Name · 0:42".
+ * It always shows the right length (the length we recorded), and nudges browsers that can't read
+ * a WebM file's duration into working it out so seeking works.
  */
 export function VoicePlayer({ src, durationSec, label }: { src: string; durationSec: number | null; label?: string }) {
   const audio = useRef<HTMLAudioElement>(null);
@@ -14,6 +15,7 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
   const [time, setTime] = useState(0);
   const [mediaDuration, setMediaDuration] = useState<number | null>(null);
   const total = mediaDuration ?? durationSec ?? 0;
+  const bars = useMemo(() => barsFor(src), [src]);
 
   useEffect(() => {
     const a = audio.current;
@@ -76,10 +78,11 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
     setTime(a.currentTime);
   }
 
-  const pct = total ? Math.min(100, (time / total) * 100) : 0;
+  const progress = total ? Math.min(1, time / total) : 0;
+  const showTime = playing || time > 0;
 
   return (
-    <div className="flex items-center gap-2.5" data-testid="voice-player">
+    <div className="flex items-center gap-2.5 rounded-[14px] bg-[#FFF7EA] px-2.5 py-2" data-testid="voice-player">
       <audio ref={audio} src={src} preload="metadata" />
       <button
         type="button"
@@ -107,13 +110,12 @@ export function VoicePlayer({ src, durationSec, label }: { src: string; duration
           if (e.key === "ArrowRight") a.currentTime = Math.min(total, a.currentTime + 5);
           if (e.key === "ArrowLeft") a.currentTime = Math.max(0, a.currentTime - 5);
         }}
-        className="relative h-2 flex-1 cursor-pointer rounded-full bg-[#F3E2C6]"
+        className="flex min-w-0 flex-1 cursor-pointer items-center"
       >
-        <div className={clsx("absolute inset-y-0 left-0 rounded-full bg-primary", playing && "transition-[width] duration-200")} style={{ width: `${pct}%` }} />
+        <Waveform bars={bars} progress={progress} />
       </div>
       <span className="shrink-0 text-sm text-ink-2 tabular-nums" data-testid="voice-time">
-        {label ? `${label} · ` : ""}
-        {fmt(time)} / {fmt(total)}
+        {showTime ? `${fmt(time)} / ${fmt(total)}` : `${label ? `${label} · ` : ""}${fmt(total)}`}
       </span>
     </div>
   );

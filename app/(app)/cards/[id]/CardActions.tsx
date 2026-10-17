@@ -1,9 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CameraIcon, MessageIcon, MicIcon, SendIcon, SparkleIcon, VideoIcon } from "@/components/icons";
+import { CameraIcon, MessageIcon, MicIcon, SendIcon, SparkleIcon } from "@/components/icons";
 import { GOLD_EVENT } from "@/components/GoldCardFrame";
-import { VoiceRecorder, readVideo, type Recording } from "@/components/Recorders";
+import { VoiceRecorder, type Recording } from "@/components/Recorders";
 import { usePhotoUpload, type StorageConfig } from "@/components/usePhotoUpload";
 
 export function CardActions({
@@ -16,7 +16,7 @@ export function CardActions({
   cardId: string;
   circleId: string;
   messageCount: number;
-  /** Owner only: add photos, voice notes and videos. Everyone can comment. */
+  /** Owner only: add photos and voice notes. Everyone can comment. */
   canPost: boolean;
   storage: StorageConfig;
 }) {
@@ -27,7 +27,6 @@ export function CardActions({
   const [recording, setRecording] = useState(false);
   const [toast, setToast] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  const videoInput = useRef<HTMLInputElement>(null);
   const { upload, uploadRecording, stage } = usePhotoUpload(circleId, storage);
 
   /** The card just turned gold: play the frame's animation and show the one-time toast. */
@@ -60,16 +59,6 @@ export function CardActions({
     }
   }
 
-  async function pickVideo(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      await addRecording(await readVideo(file));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "We couldn’t use that video.");
-    }
-  }
 
   async function addPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []).slice(0, 10);
@@ -156,25 +145,9 @@ export function CardActions({
           (recording ? (
             <VoiceRecorder onDone={addRecording} onCancel={() => setRecording(false)} />
           ) : (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={stage !== "idle"}
-                onClick={() => setRecording(true)}
-                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-field text-[15px] text-ink disabled:opacity-60"
-              >
-                <MicIcon size={18} className="text-primary" /> Voice note
-              </button>
-              <button
-                type="button"
-                disabled={stage !== "idle"}
-                onClick={() => videoInput.current?.click()}
-                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-field text-[15px] text-ink disabled:opacity-60"
-              >
-                <VideoIcon size={18} className="text-primary" /> Video
-              </button>
-              <input ref={videoInput} type="file" accept="video/mp4,video/webm,video/quicktime" capture="environment" className="sr-only" onChange={pickVideo} />
-            </div>
+            <button type="button" disabled={stage !== "idle"} onClick={() => setRecording(true)} className="flex h-14 w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#EED8B5] bg-surface text-base text-ink disabled:opacity-60">
+              <MicIcon size={22} className="text-primary" /> Voice note
+            </button>
           ))}
         {stage !== "idle" && <p className="m-0 text-sm text-ink-3">{stage === "uploading" ? "Uploading…" : "Getting it ready…"}</p>}
         {error && (
