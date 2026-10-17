@@ -71,7 +71,13 @@ export async function updateMobility(input: {
 }
 
 export async function setCircleMode(circleId: string, mode: "active" | "memorial"): Promise<CircleRow> {
-  const [row] = await sql<CircleRow[]>`
-    update circles set mode = ${mode}, mode_changed_at = now() where id = ${circleId} returning *`;
-  return row!;
+  return sql.begin(async (tx) => {
+    const [row] = await tx<CircleRow[]>`
+      update circles set mode = ${mode}, mode_changed_at = now() where id = ${circleId} returning *`;
+    // The owner did it themselves: any family request to do the same is done with.
+    if (mode === "memorial") {
+      await tx`update memorial_requests set closed_at = now(), outcome = 'switched' where circle_id = ${circleId} and closed_at is null`;
+    }
+    return row!;
+  });
 }

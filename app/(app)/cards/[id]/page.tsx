@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CategoryIcon, ChevronLeft, SparkleIcon } from "@/components/icons";
+import { ChevronLeft, SparkleIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { Avatar } from "@/components/ui/Avatar";
 import { canSeeCard } from "@/lib/authz";
-import { CATEGORY_LABEL } from "@/lib/activityText";
 import { requirePageUser } from "@/lib/auth/session";
 import { findCardForMember } from "@/lib/db/queries/cards";
 import { findCircleForMember } from "@/lib/db/queries/circles";
@@ -74,9 +73,8 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
             <SparkleIcon size={16} className="text-gold" /> Gold card · the family loves this one
           </span>
         ) : (
-          <span className="flex items-center gap-1.5 rounded-2xl bg-tint px-3 py-1.5 text-sm font-bold text-primary-hover">
-            <CategoryIcon category={card.category} size={18} />
-            {CATEGORY_LABEL[card.category]}
+          <span className="flex items-center gap-1.5 rounded-2xl bg-tint px-3 py-1.5 text-sm font-bold text-primary-hover" data-testid="gold-hint">
+            <SparkleIcon size={16} className="text-gold" /> A message will turn this card gold
           </span>
         )}
         <span className="w-11" />

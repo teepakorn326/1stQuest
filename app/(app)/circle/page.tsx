@@ -7,6 +7,9 @@ import Link from "next/link";
 import { canInvite, memorialUndoUntil } from "@/lib/authz";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listMembers } from "@/lib/db/queries/memberships";
+import { findOpenRequest } from "@/lib/db/queries/memorial";
+import { canAsk, canCancel, canConfirm, canTrustedSwitch } from "@/lib/memorial";
+import { MemorialHandover, TrustedForm, type HandoverView } from "./MemorialHandover";
 import { PasswordForm } from "./PasswordForm";
 import { PhoneForm } from "./PhoneForm";
 
@@ -18,7 +21,29 @@ export default async function CirclePage() {
   const user = await requirePageUser("/circle");
   const circle = await getActiveCircle(user.id);
   if (!circle) redirect("/home");
-  const members = await listMembers(circle.id);
+  const [members, open] = await Promise.all([listMembers(circle.id), circle.mode === "active" ? findOpenRequest(circle.id) : null]);
+  const viewer = { userId: user.id, role: circle.role };
+  const owner = members.find((m) => m.role === "owner");
+  const label = (m: { name: string | null; email: string }) => m.name ?? m.email;
+  const handover: HandoverView = {
+    circleId: circle.id,
+    patientName: circle.patient_name,
+    ownerName: owner ? label(owner) : "the owner",
+    role: circle.role,
+    can: {
+      switch: canTrustedSwitch(viewer, circle),
+      ask: canAsk(viewer, circle, open),
+      confirm: canConfirm(viewer, circle, open),
+      cancel: canCancel(viewer, open),
+    },
+    open: open && {
+      requesterName: open.requester_name ?? "A family member",
+      confirmerName: open.confirmer_name,
+      takesEffectAt: open.takes_effect_at?.toISOString() ?? null,
+      mine: open.requested_by === user.id,
+    },
+  };
+  const showHandover = circle.mode === "active" && (open || Object.values(handover.can).some(Boolean));
 
   return (
     <main className="flex flex-col">
@@ -39,7 +64,10 @@ export default async function CirclePage() {
                   {m.name ?? m.email}
                   {m.user_id === user.id && " (you)"}
                 </span>
-                <span className="text-sm text-ink-3">{ROLE_LABEL[m.role]}</span>
+                <span className="text-sm text-ink-3">
+                  {ROLE_LABEL[m.role]}
+                  {m.user_id === circle.trusted_user_id && " · Trusted"}
+                </span>
               </li>
             ))}
           </ul>
@@ -50,6 +78,16 @@ export default async function CirclePage() {
             {circle.mode === "active" ? `Turn ${circle.patient_name}’s book into a memorial album` : "Memorial album: undo"}
           </Link>
         )}
+        {circle.role === "owner" && circle.mode === "active" && (
+          <TrustedForm
+            circleId={circle.id}
+            patientName={circle.patient_name}
+            family={members.filter((m) => m.role === "family").map((m) => ({ id: m.user_id, name: label(m) }))}
+            trustedUserId={circle.trusted_user_id}
+            nudge={circle.set_up_by_patient && !circle.trusted_user_id}
+          />
+        )}
+        {showHandover && <MemorialHandover v={handover} />}
         <section className="flex flex-col gap-2.5">
           <h2 className="m-0 text-base font-bold">Your account</h2>
           <div className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-4">
