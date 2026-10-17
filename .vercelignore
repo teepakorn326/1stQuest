@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+.pglite
+node_modules
+.next
+.claude/settings.local.json
+playwright-report
+test-results
