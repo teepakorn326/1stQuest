@@ -13,6 +13,8 @@ export type WishSummary = {
   open_quests: number;
   /** Most recently updated in-progress quest, for "Tom is booking transport". */
   active_quest: { title: string; status: QuestStatus; claimer_name: string | null } | null;
+  /** Every quest in the plan is done: the wish is shown greyed out and can't be re-planned or changed. */
+  done: boolean;
 };
 
 /**
@@ -23,7 +25,8 @@ export async function listVisibleWishes(circleId: string, userId: string, limit 
   return sql<WishSummary[]>`
     select w.id, w.text, w.category, w.visibility, w.created_at,
       coalesce(q.open_quests, 0)::int as open_quests,
-      aq.active_quest
+      aq.active_quest,
+      (exists (select 1 from quests dq where dq.wish_id = w.id) and not exists (select 1 from quests dq where dq.wish_id = w.id and dq.status <> 'done')) as done
     from wishes w
     left join lateral (
       select count(*) filter (where status = 'open') as open_quests from quests where wish_id = w.id
@@ -40,7 +43,7 @@ export async function listVisibleWishes(circleId: string, userId: string, limit 
         or w.visibility = 'circle'
         or (w.visibility = 'chosen' and exists (select 1 from wish_viewers v where v.wish_id = w.id and v.user_id = ${userId}))
       )
-    order by w.created_at desc
+    order by done, w.created_at desc
     limit ${limit}`;
 }
 
@@ -48,6 +51,7 @@ export type WishDetail = WishRow & {
   author_name: string | null;
   viewer_ids: string[];
   viewer_role: Role;
+  done: boolean;
 };
 
 /**
@@ -57,6 +61,7 @@ export type WishDetail = WishRow & {
 export async function findWishForMember(wishId: string, userId: string): Promise<WishDetail | null> {
   const [row] = await sql<WishDetail[]>`
     select w.*, u.name as author_name, m.role as viewer_role,
+      (exists (select 1 from quests dq where dq.wish_id = w.id) and not exists (select 1 from quests dq where dq.wish_id = w.id and dq.status <> 'done')) as done,
       coalesce((select array_agg(v.user_id) from wish_viewers v where v.wish_id = w.id), '{}') as viewer_ids
     from wishes w
     join memberships m on m.circle_id = w.circle_id and m.user_id = ${userId}

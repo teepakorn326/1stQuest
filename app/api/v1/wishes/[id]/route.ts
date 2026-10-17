@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { readBody, route, forbidden, notFound } from "@/lib/http";
+import { conflict, readBody, route, forbidden, notFound } from "@/lib/http";
 import { requireApiUser } from "@/lib/auth/session";
 import { canPost, canSeeWish, POST_FORBIDDEN } from "@/lib/authz";
 import { findWishForMember, updateWish } from "@/lib/db/queries/wishes";
@@ -14,6 +14,7 @@ export const PATCH = route<{ id: string }>(async (req, { params }) => {
   const wish = await findWishForMember(z.uuid().parse(params.id), user.id);
   if (!wish || !canSeeWish({ userId: user.id, role: wish.viewer_role }, wish, wish.viewer_ids)) throw notFound();
   if (!canPost({ userId: user.id, role: wish.viewer_role }) || wish.author_id !== user.id) throw forbidden(POST_FORBIDDEN);
+  if (wish.done) throw conflict("This wish is done: every quest is complete, so its plan and words stay as they are.", "wish_done");
   const input = await readBody(req, WishInput);
   const updated = await updateWish(wish.id, user.id, input);
   if (!updated) throw notFound();

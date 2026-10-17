@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { route, forbidden, notFound, HttpError } from "@/lib/http";
+import { route, conflict, forbidden, notFound, HttpError } from "@/lib/http";
 import { requireApiUser } from "@/lib/auth/session";
 import { canPost, canSeeWish, POST_FORBIDDEN } from "@/lib/authz";
 import { ai, AiError } from "@/lib/ai";
@@ -17,6 +17,7 @@ export const POST = route<{ id: string }>(async (_req, { params, log }) => {
   const viewer = { userId: user.id, role: wish?.viewer_role ?? null };
   if (!wish || !canSeeWish(viewer, wish, wish.viewer_ids)) throw notFound();
   if (!canPost(viewer)) throw forbidden(POST_FORBIDDEN);
+  if (wish.done) throw conflict("This wish is done: every quest is complete, so its plan and words stay as they are.", "wish_done");
 
   const [circle, current] = await Promise.all([findCircleForMember(wish.circle_id, user.id), findLatestPlan(wish.id)]);
   if (!circle) throw notFound();

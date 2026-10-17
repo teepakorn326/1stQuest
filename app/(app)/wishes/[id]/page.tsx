@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CategoryIcon, ChevronLeft, EyeIcon, LockIcon } from "@/components/icons";
+import { CategoryIcon, CheckIcon, ChevronLeft, EyeIcon, LockIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { questTransition } from "@/lib/quests";
 import { realtimeConfig } from "@/lib/realtime";
@@ -30,7 +30,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
   ]);
   const isAuthor = wish.author_id === user.id;
   const viewer = { userId: user.id, role: wish.viewer_role };
-  const canPlan = wish.viewer_role === "owner";
+  const canPlan = wish.viewer_role === "owner" && !wish.done;
   const quests: QuestView[] = (plan?.quests ?? []).map((q) => {
     const quest = { status: q.status, claimed_by_user_id: q.claimed_by_user_id };
     const can = (a: "claim" | "release" | "done") => questTransition(a, quest, wish, viewer, wish.viewer_ids).ok;
@@ -63,7 +63,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
           <CategoryIcon category={wish.category} size={18} />
           {CATEGORY_LABEL[wish.category]}
         </span>
-        {isAuthor && wish.viewer_role === "owner" ? (
+        {isAuthor && wish.viewer_role === "owner" && !wish.done ? (
           <Link href={`/wishes/${wish.id}/edit`} className="flex h-11 items-center px-2 text-[15px] font-bold no-underline">
             Change
           </Link>
@@ -73,7 +73,12 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
       </header>
 
       <div className="flex flex-col gap-3.5 px-5 pt-1 pb-5">
-        <h1 className="m-0 text-2xl leading-tight font-bold">{wish.text}</h1>
+        {wish.done && (
+          <span className="flex w-fit items-center gap-1.5 rounded-2xl bg-[#EFE7DA] px-3 py-1.5 text-sm font-bold text-ink-2" data-testid="wish-done">
+            <CheckIcon size={16} /> Done · every quest is complete
+          </span>
+        )}
+        <h1 className={wish.done ? "m-0 text-2xl leading-tight font-bold text-ink-2" : "m-0 text-2xl leading-tight font-bold"}>{wish.text}</h1>
         <p className="m-0 flex items-center gap-1.5 text-sm text-ink-3">
           {wish.visibility === "circle" ? <EyeIcon size={16} /> : <LockIcon size={16} />}
           {seenBy} Added by {isAuthor ? "you" : (wish.author_name ?? "someone")}.
@@ -120,7 +125,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
           </section>
         )}
       </div>
-      {canPlan && (
+      {wish.viewer_role === "owner" && (
         <div className="sticky bottom-[76px] mt-auto border-t border-line bg-bg px-5 pt-3 pb-4">
           <ButtonLink href={`/wishes/${wish.id}/moments`} className="w-full">
             We did it, add moments

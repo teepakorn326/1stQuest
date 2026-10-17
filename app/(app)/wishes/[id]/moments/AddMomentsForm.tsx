@@ -2,10 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { CameraIcon, CategoryIcon, CloseIcon, MicIcon, VideoIcon } from "@/components/icons";
+import { CameraIcon, CategoryIcon, CloseIcon, MicIcon } from "@/components/icons";
 import { CATEGORY_LABEL } from "@/lib/activityText";
 import { CATEGORIES, type Category } from "@/lib/db/types";
-import { RecordingPreview, VoiceRecorder, readVideo, type Recording } from "@/components/Recorders";
+import { RecordingPreview, VoiceRecorder, type Recording } from "@/components/Recorders";
 import { Button } from "@/components/ui/Button";
 import { FormError, Textarea } from "@/components/ui/Field";
 import { usePhotoUpload, type StorageConfig } from "@/components/usePhotoUpload";
@@ -43,20 +43,6 @@ export function AddMomentsForm({
   const [recording, setRecording] = useState(false);
   // Recordings already filed on a failed attempt, keyed by preview URL, so retries don't re-upload.
   const filed = useRef(new Map<string, string>());
-  const videoInput = useRef<HTMLInputElement>(null);
-
-  async function pickVideo(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setError(null);
-    try {
-      const r = await readVideo(file);
-      setRecordings((cur) => [...cur, r]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "We couldn’t use that video.");
-    }
-  }
 
   // Revoke preview URLs on unmount only; revoking on every change would blank the previews still shown.
   const urls = useRef<string[]>([]);
@@ -198,7 +184,7 @@ export function AddMomentsForm({
           <span className="text-sm text-ink-3">A few words is plenty. We’ll help shape the card.</span>
         </div>
         <section className="flex flex-col gap-2.5">
-          <h2 className="m-0 text-base font-bold">{patientName}’s voice or video</h2>
+          <h2 className="m-0 text-base font-bold">{patientName}’s voice</h2>
           {recordings.map((r, i) => (
             <RecordingPreview key={r.url} r={r} onRemove={busy ? undefined : () => setRecordings((cur) => cur.filter((_, j) => j !== i))} />
           ))}
@@ -211,27 +197,11 @@ export function AddMomentsForm({
               onCancel={() => setRecording(false)}
             />
           ) : (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setRecording(true)}
-                className="flex h-14 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-field bg-surface text-base text-ink"
-              >
-                <MicIcon size={20} className="text-primary" /> Voice note
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => videoInput.current?.click()}
-                className="flex h-14 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-field bg-surface text-base text-ink"
-              >
-                <VideoIcon size={20} className="text-primary" /> Video
-              </button>
-            </div>
+            <button type="button" disabled={busy} onClick={() => setRecording(true)} className="flex h-14 w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#EED8B5] bg-surface text-base text-ink disabled:opacity-60" data-testid="voice-note">
+              <MicIcon size={22} className="text-primary" /> Voice note
+            </button>
           )}
-          <input ref={videoInput} type="file" accept="video/mp4,video/webm,video/quicktime" capture="environment" className="sr-only" onChange={pickVideo} data-testid="video-input" />
-          <span className="text-sm text-ink-3">Saved on the card for the family to keep. Voice up to 5 minutes, video up to 2.</span>
+          <span className="text-sm text-ink-3">Saved on the card for the family to keep. Up to 5 minutes.</span>
         </section>
         <FormError message={error} />
       </div>

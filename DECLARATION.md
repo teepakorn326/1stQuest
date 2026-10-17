@@ -2,12 +2,11 @@
 
 Every feature in the spec appears in exactly one list. Nothing is described as partially working: anything not fully working is under **Not built**.
 
-_Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owner-only posting, comments instead of likes, gold animation, microphone on New wish, card share links, notifications by app and text). Live at https://1stquest.vercel.app._
+_Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owner-only posting, comments instead of likes, gold animation, microphone on New wish, card share links, notifications by app and text), then voice-only recordings with the design’s waveform player and a mobile number on Welcome. Live at https://1stquest.vercel.app._
 
 **Before you judge:**
 - **Text messages are in dev mode.** ClickSend isn’t configured yet, so texts are prepared and logged, not sent. Setting `CLICKSEND_USERNAME` and `CLICKSEND_API_KEY` (and optionally `CLICKSEND_FROM`) turns them on with no code change.
 - **Sign-in is in dev mode.** No verified email sender is set up yet, so the sign-in link is shown on screen instead of emailed. This also means anyone can sign in as any email address, including the demo accounts. It makes the demo easy to try; it is not production auth. Setting `RESEND_API_KEY` and a verified `EMAIL_FROM` switches to real email with no code change.
-- Supabase’s free plan caps uploads at 50MB per file, so videos are capped at 50MB rather than the spec’s 100MB.
 - `pnpm smoke` runs the whole demo loop below against the live URL with two people and the real AI. Last two runs: passed in 27s and 22s, with the live update reaching the other screen in 797 ms and 801 ms.
 
 ## Works live on the URL
@@ -52,27 +51,27 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
   - If the AI fails, the photos and words are kept and “Make the card” can be retried without re-uploading.
 - Card reveal: spin-in, shine and sparkle, then “Add to the book” (the card flies into the book), “Change the words” (author only), “Open the card”, “Play again”. Respects reduced-motion settings.
 - Card detail: photos (clipped to their frame, so tall photos never cover the words), words, credit line (“Made from N photos and <name>’s story”), place and date, and messages to the person. There are no likes: comments are how people show love.
-- Only the circle’s owner posts: wishes, plans, Talk it through, cards, memories, and photos, voice notes or videos. Everyone else reads, comments and takes quests. Posting controls are hidden from them, and the API refuses with 403.
+- Only the circle’s owner posts: wishes, plans, Talk it through, cards, memories, photos and voice notes. Everyone else reads, comments and takes quests. Posting controls are hidden from them, and the API refuses with 403.
+- Done wishes: when every quest in a wish’s plan is done, the wish is done. It shows greyed out with a check and “Done · every quest is complete”, moves to the bottom of the wish lists, and becomes read-only: its plan can’t be updated and its words can’t be changed (the API refuses with 409 `wish_done`). Moments and cards can still be added from it.
 - Microphone on New wish: tap it and speak, and the words go into the wish box (browser speech recognition, where supported).
 - Share one card: the card’s owner can create a link that anyone can open without signing in. It shows only that card (words, photos, recordings), with no messages, members or anything else from the circle. “Stop sharing” turns the link off straight away. Shared pages are marked noindex.
-- Notifications when the owner posts (a wish, a plan, a card, a memory, or photos, voice or video added to a card). They go automatically to everyone in the circle who may see the post; a private wish notifies no one.
+- Notifications when the owner posts (a wish, a plan, a card, a memory, or photos or a voice note added to a card). They go automatically to everyone in the circle who may see the post; a private wish notifies no one.
   - In the app: a bell with an unread count, a Notifications page, and a live pop-up (an empty Realtime ping on each person’s own channel; 30-second poll as a fallback).
-  - By text message (ClickSend): each person can add a mobile number and opt in from the Circle tab. Texts go out after the post is saved and never slow it down.
+  - By text message (ClickSend): each person can add a mobile number and opt in when they first sign in (Welcome page) or later from the Circle tab. Numbers use the international format (+66…, +61…). Texts go out after the post is saved and never slow it down.
 - The book, which has no finished state:
   - Collection: six category slots. Filled slots show fanned covers and a count; empty slots show a gentle prompt and “Add a wish”.
   - Timeline: cards grouped by “Month · season”, with seasons for the southern hemisphere.
-- Voice notes and video, on Add moments and on any card.
-  - Voice notes are recorded in the browser (MediaRecorder), up to 5 minutes, and stop by themselves at 5:00. Chrome records WebM files without a length, so the real duration is written into the file before upload. The app’s own voice player shows the recorded length (“0:03 / 0:09”) even for older files.
-  - Videos are picked from the phone (or recorded with its camera), up to 2 minutes and 50MB.
+- Voice notes, on Add moments and on any card (the owner records them). Video was removed after the 17 Oct feedback; older video cards still play.
+  - Voice notes are recorded in the browser (MediaRecorder), up to 5 minutes, and stop by themselves at 5:00. Chrome records WebM files without a length, so the real duration is written into the file before upload. While recording, live waveform bars follow the microphone level next to the timer. Playback uses the design’s player: a round amber play button, waveform bars that fill as it plays (tap or arrow keys to seek), and “Name · 0:42”. It shows the recorded length (“0:03 / 0:09”) even for older files.
   - They upload the same way as photos. The server checks the stored file’s real type and size and keeps it as-is at `<circleId>/<mediaId>.<ext>`.
   - They play on the card from the same gated media URL.
-- Card level-up: when 3 or more different members have contributed to a card (made it, left a message, or added a photo, voice note or video), it turns gold everywhere it appears. It gets a “Gold card · the family loves this one” chip and posts once to the feed. The moment it turns gold, the card pulses, glows, sweeps with light and throws sparkles, and the person whose message tipped it over sees a one-time “✨ Levelled up” toast. Gold cards get the design’s gold border: a dark-amber-to-gold gradient frame with a soft band of light travelling around it and a glossy highlight. They also keep a gentle shimmer and a slowly turning gold aura (in the book’s collection and timeline too). When a card gets its first comment, it turns over once for everyone viewing it, like the new-card reveal: a smooth 3D turn showing the card’s amber back, twinkling stars, a sparkle burst and a shine as it lands. All motion is off with reduced-motion settings.
+- Card level-up: when 3 or more different members have contributed to a card (made it, left a message, or added a photo or voice note), it turns gold everywhere it appears. It gets a “Gold card · the family loves this one” chip and posts once to the feed. The moment it turns gold, the card pulses, glows, sweeps with light and throws sparkles, and the person whose message tipped it over sees a one-time “✨ Levelled up” toast. Gold cards get the design’s gold border: a dark-amber-to-gold gradient frame with a soft band of light travelling around it and a glossy highlight. They also keep a gentle shimmer and a slowly turning gold aura (in the book’s collection and timeline too). When a card gets its first comment, it turns over once for everyone viewing it, like the new-card reveal: a smooth 3D turn showing the card’s amber back, twinkling stars, a sparkle burst and a shine as it lands. All motion is off with reduced-motion settings.
 - Memorial mode (owner only): a confirmation screen explains what changes; it can be undone for 30 days.
   - Home becomes “Remembering <name>” with “Share a memory” and the newest cards (who shared each, and what it holds).
   - The menu becomes Home / Book / Family.
   - Adding wishes and “Talk it through” are put away: those pages redirect and the wish API refuses.
   - The book’s empty slots ask for memories instead.
-  - “Share a memory” makes a card with no wish (photos, voice, video, a few words), and the AI writes it as a remembrance.
+  - “Share a memory” makes a card with no wish (photos, voice, a few words), and the AI writes it as a remembrance.
   - Existing wishes, cards and messages all stay.
 - Make a copy of the book (export button on the Book tab; “Make a book for the service” in memorial mode). Choose Photo book or Slideshow, and order By category or By date.
   - Photo book: a PDF built on the server with @react-pdf/renderer and streamed as a download. It has a cover, then one page per card with up to 3 photos, the category, date and place, title, words and who shared it, plus a gold bar for gold cards. It only includes cards the downloader may see.
@@ -84,7 +83,7 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 - `GET /api/health` runs a real `SELECT 1`.
 - Every API route checks circle membership, validates input with zod, and returns `{ error: { code, message } }` without stack traces. Logs are structured JSON with a request id.
 - Every AI call has a 20s timeout and retries with backoff, and logs model, tokens and latency. Sonnet calls use the server-side refusal fallback.
-- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 85 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the third contributor, voice/video limits, memorial undo window, book page order, a real PDF render, copy lint). `pnpm smoke` is the Playwright demo-loop test.
+- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 91 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the third contributor, voice limits, memorial undo window, book page order, a real PDF render, copy lint). `pnpm smoke` is the Playwright demo-loop test.
 
 ## Seeded for context
 
@@ -111,8 +110,8 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 - Photos are uploaded straight from the browser to Storage (signed upload URLs), then resized by the server. Vercel caps request bodies at 4.5MB, which is too small for 10 photos of up to 15MB through a route handler.
 - The card reveal uses the CSS keyframes from the design rather than framer-motion.
 - Banned words: every system prompt forbids them, and card text is also checked by code and rewritten. Chat replies and plan text rely on the prompt alone.
-- Voice and video length is checked in the browser (and capped at 5 minutes by the recorder). The server enforces type and size on the stored file but has no media probe to read duration.
-- A video’s 50MB cap (spec: 100MB) comes from Supabase’s free plan.
+- Voice note length is checked in the browser (and capped at 5 minutes by the recorder). The server enforces type and size on the stored file but has no media probe to read duration.
+- Video recordings from the spec were removed at the user’s request; the API still accepts them, so older cards keep working.
 - Level-up counts the card’s maker as a contributor, so a card needs two other people to turn gold.
 - Switching to memorial mode posts nothing to the activity feed, on purpose.
 - The PDF uses the built-in Helvetica font rather than Atkinson Hyperlegible, so printing doesn’t depend on fetching a font at render time.
