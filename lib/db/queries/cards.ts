@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db/client";
 import { insertActivity } from "@/lib/db/queries/activity";
+import { maybeLevelUp } from "@/lib/db/queries/levels";
 import { wishVisibleTo } from "@/lib/db/queries/visibility";
 import type { CardRow, Category, Role, Visibility } from "@/lib/db/types";
 
@@ -22,12 +23,13 @@ export async function createCard(input: {
               ${input.title}, ${input.body}, ${input.story}, ${input.place})
       returning *`;
     if (input.mediaIds.length) {
-      const attached = await tx<{ id: string }[]>`
+      const attached = await tx<{ id: string; kind: string }[]>`
         update media set card_id = ${card!.id}
         where circle_id = ${input.circleId} and uploader_id = ${input.authorId}
           and card_id is null and id = any(${input.mediaIds}::uuid[])
-        returning id`;
-      const ids = new Set(attached.map((r) => r.id));
+        returning id, kind`;
+      // The cover is the first photo in the order given (never a voice note or video).
+      const ids = new Set(attached.filter((r) => r.kind === "photo").map((r) => r.id));
       const cover = input.mediaIds.find((id) => ids.has(id));
       if (cover) await tx`update cards set cover_media_id = ${cover} where id = ${card!.id}`;
       card!.cover_media_id = cover ?? null;
@@ -52,6 +54,7 @@ export type CardDetail = CardRow & {
   viewer_role: Role;
   viewer_ids: string[];
   photo_ids: string[];
+  recordings: { id: string; kind: "voice" | "video"; duration_sec: number | null; uploader_id: string | null; uploader_name: string | null }[];
   like_count: number;
   liked_by_me: boolean;
   liker_names: string[];
@@ -65,6 +68,10 @@ export async function findCardForMember(cardId: string, viewerId: string): Promi
       w.text as wish_text, w.author_id as wish_author_id, w.visibility as wish_visibility,
       coalesce((select array_agg(v.user_id) from wish_viewers v where v.wish_id = w.id), '{}') as viewer_ids,
       coalesce((select array_agg(md.id order by md.created_at) from media md where md.card_id = c.id and md.kind = 'photo'), '{}') as photo_ids,
+      coalesce((select json_agg(json_build_object('id', md.id, 'kind', md.kind, 'duration_sec', md.duration_sec,
+                  'uploader_id', md.uploader_id, 'uploader_name', uu.name) order by md.created_at)
+                from media md left join users uu on uu.id = md.uploader_id
+                where md.card_id = c.id and md.kind <> 'photo'), '[]') as recordings,
       (select count(*)::int from card_likes l where l.card_id = c.id) as like_count,
       exists (select 1 from card_likes l where l.card_id = c.id and l.user_id = ${viewerId}) as liked_by_me,
       coalesce((select array_agg(x.name) from (
@@ -93,7 +100,11 @@ export async function setLike(cardId: string, userId: string, liked: boolean): P
   else await sql`delete from card_likes where card_id = ${cardId} and user_id = ${userId}`;
 }
 
-export async function addMessage(card: Pick<CardDetail, "id" | "circle_id" | "wish_id" | "title">, authorId: string, text: string) {
+export async function addMessage(
+  card: Pick<CardDetail, "id" | "circle_id" | "wish_id" | "title">,
+  authorId: string,
+  text: string,
+): Promise<{ id: string; levelledUp: boolean }> {
   return sql.begin(async (tx) => {
     const [row] = await tx<{ id: string }[]>`
       insert into card_messages (card_id, author_id, text) values (${card.id}, ${authorId}, ${text}) returning id`;
@@ -105,7 +116,7 @@ export async function addMessage(card: Pick<CardDetail, "id" | "circle_id" | "wi
       refId: card.id,
       payload: { title: card.title },
     });
-    return row!;
+    return { id: row!.id, levelledUp: await maybeLevelUp(tx, card.id) };
   });
 }
 
@@ -120,4 +131,23 @@ export async function listBookCards(circleId: string, viewerId: string, wishId?:
       and (w.id is null or ${wishVisibleTo(viewerId)})
       ${wishId ? sql`and c.wish_id = ${wishId}` : sql``}
     order by c.happened_on desc, c.created_at desc`;
+}
+
+export type RecentCard = BookCard & { author_name: string | null; photos: number; voices: number; videos: number; messages: number };
+
+/** Newest cards (by when they were added) for memorial Home, with what each holds. */
+export async function listRecentCards(circleId: string, viewerId: string, limit = 5): Promise<RecentCard[]> {
+  return sql<RecentCard[]>`
+    select c.id, c.title, c.category, c.happened_on, c.place, c.cover_media_id, c.level, c.created_at, c.wish_id,
+      u.name as author_name,
+      (select count(*)::int from media m where m.card_id = c.id and m.kind = 'photo') as photos,
+      (select count(*)::int from media m where m.card_id = c.id and m.kind = 'voice') as voices,
+      (select count(*)::int from media m where m.card_id = c.id and m.kind = 'video') as videos,
+      (select count(*)::int from card_messages cm where cm.card_id = c.id) as messages
+    from cards c
+    left join wishes w on w.id = c.wish_id
+    left join users u on u.id = c.author_id
+    where c.circle_id = ${circleId} and (w.id is null or ${wishVisibleTo(viewerId)})
+    order by c.created_at desc
+    limit ${limit}`;
 }

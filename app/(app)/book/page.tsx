@@ -21,6 +21,15 @@ const PROMPT: Record<Category, (name: string) => string> = {
   legacy: () => "A recipe or story to pass on?",
 };
 
+const MEMORY_PROMPT: Record<Category, (name: string) => string> = {
+  places: (n) => `A place that was ${n}’s?`,
+  tastes: (n) => `Something ${n} loved to cook or eat?`,
+  people: (n) => `Someone ${n} lit up around?`,
+  music: (n) => `A song that sounds like ${n}?`,
+  nature: (n) => `Where ${n} loved to be outside?`,
+  legacy: (n) => `Something ${n} taught you?`,
+};
+
 const TILTS = ["-rotate-6", "rotate-3", "-rotate-2"];
 const TONES = ["bg-[#C7DCEE]", "bg-[#A4C4DF]", "bg-[#B5D0E7]"];
 
@@ -39,7 +48,7 @@ function Cover({ card, className }: { card: BookCard; className?: string }) {
   );
 }
 
-function Collection({ cards, name }: { cards: BookCard[]; name: string }) {
+function Collection({ cards, name, memorial }: { cards: BookCard[]; name: string; memorial: boolean }) {
   return (
     <div className="grid grid-cols-2 gap-3" data-testid="collection">
       {CATEGORIES.map((cat) => {
@@ -51,9 +60,12 @@ function Collection({ cards, name }: { cards: BookCard[]; name: string }) {
                 <CategoryIcon category={cat} size={18} />
                 {CATEGORY_LABEL[cat]}
               </span>
-              <p className="m-0 flex-1 text-[15px] leading-snug text-ink-2">{PROMPT[cat](name)}</p>
-              <Link href={`/wishes/new?category=${cat}`} className="flex min-h-11 items-center text-[15px] font-bold no-underline">
-                Add a wish
+              <p className="m-0 flex-1 text-[15px] leading-snug text-ink-2">{memorial ? MEMORY_PROMPT[cat](name) : PROMPT[cat](name)}</p>
+              <Link
+                href={memorial ? `/memories/new?category=${cat}` : `/wishes/new?category=${cat}`}
+                className="flex min-h-11 items-center text-[15px] font-bold no-underline"
+              >
+                {memorial ? "Share a memory" : "Add a wish"}
               </Link>
             </div>
           );
@@ -164,12 +176,12 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           </Link>
         </p>
       )}
-      {view === "collection" ? <Collection cards={all} name={circle.patient_name} /> : <Timeline cards={cards} hemisphere={circle.hemisphere} />}
+      {view === "collection" ? <Collection cards={all} name={circle.patient_name} memorial={circle.mode === "memorial"} /> : <Timeline cards={cards} hemisphere={circle.hemisphere} />}
       <Link
-        href="/wishes/new"
+        href={circle.mode === "memorial" ? "/memories/new" : "/wishes/new"}
         className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-[#A9C3D8] text-[15px] font-bold no-underline"
       >
-        <PlusIcon size={18} /> Add a wish for the next page
+        <PlusIcon size={18} /> {circle.mode === "memorial" ? "Share a memory" : "Add a wish for the next page"}
       </Link>
     </main>
   );

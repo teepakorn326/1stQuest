@@ -3,23 +3,22 @@ import { z } from "zod";
 import { readBody, route, notFound, HttpError } from "@/lib/http";
 import { requireApiUser } from "@/lib/auth/session";
 import { findCircleForMember } from "@/lib/db/queries/circles";
-import { MAX_PHOTO_BYTES, MAX_PHOTOS, PHOTO_TYPES } from "@/lib/images";
+import { MAX_PHOTOS } from "@/lib/images";
+import { LIMITS, kindOf } from "@/lib/mediaLimits";
 import { signedUpload, storageConfigured } from "@/lib/storage";
 
-const Body = z.object({
-  files: z
-    .array(
-      z.object({
-        type: z.string().refine((t) => (PHOTO_TYPES as readonly string[]).includes(t), "Photos can be JPG, PNG or WebP."),
-        size: z.number().int().positive().max(MAX_PHOTO_BYTES, "Each photo can be up to 15MB."),
-      }),
-    )
-    .min(1)
-    .max(MAX_PHOTOS, `Up to ${MAX_PHOTOS} photos at a time.`),
-});
+const File = z
+  .object({ type: z.string().min(1), size: z.number().int().positive() })
+  .superRefine((f, ctx) => {
+    const kind = kindOf(f.type);
+    if (!kind) return ctx.addIssue({ code: "custom", message: "That kind of file can’t be added. Try a photo, voice note or video." });
+    if (f.size > LIMITS[kind].maxBytes) ctx.addIssue({ code: "custom", message: LIMITS[kind].label });
+  });
+
+const Body = z.object({ files: z.array(File).min(1).max(MAX_PHOTOS, `Up to ${MAX_PHOTOS} files at a time.`) });
 
 /**
- * Step 1 of adding photos: one signed upload slot per file, in a staging folder. The browser
+ * Step 1 of adding photos, voice notes or videos: one signed upload slot per file, in a staging folder. The browser
  * uploads originals straight to Storage (Vercel caps request bodies at 4.5MB).
  */
 export const POST = route<{ id: string }>(async (req, { params }) => {

@@ -3,7 +3,8 @@ import { PlusIcon } from "@/components/icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { canInvite } from "@/lib/authz";
+import Link from "next/link";
+import { canInvite, memorialUndoUntil } from "@/lib/authz";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listMembers } from "@/lib/db/queries/memberships";
 import { PasswordForm } from "./PasswordForm";
@@ -20,7 +21,7 @@ export default async function CirclePage() {
 
   return (
     <main className="flex flex-col">
-      <PageHeader title={`${circle.patient_name}’s circle`} />
+      <PageHeader title={circle.mode === "memorial" ? "Family" : `${circle.patient_name}’s circle`} />
       <div className="flex flex-col gap-5 px-5 pt-2 pb-5">
         {canInvite({ userId: user.id, role: circle.role }) && (
           <ButtonLink href="/circle/invite">
@@ -43,6 +44,11 @@ export default async function CirclePage() {
           </ul>
         </section>
 
+        {circle.role === "owner" && (circle.mode === "active" || memorialUndoUntil(circle)! > new Date()) && (
+          <Link href="/circle/memorial" className="text-[15px] font-bold no-underline" data-testid="memorial-link">
+            {circle.mode === "active" ? `Turn ${circle.patient_name}’s book into a memorial album` : "Memorial album: undo"}
+          </Link>
+        )}
         <section className="flex flex-col gap-2.5">
           <h2 className="m-0 text-base font-bold">Your account</h2>
           <div className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-4">

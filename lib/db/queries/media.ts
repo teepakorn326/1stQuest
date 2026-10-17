@@ -1,8 +1,9 @@
 import "server-only";
 import { sql } from "@/lib/db/client";
 import { insertActivity } from "@/lib/db/queries/activity";
+import { maybeLevelUp } from "@/lib/db/queries/levels";
 import { wishVisibleTo } from "@/lib/db/queries/visibility";
-import type { MediaRow } from "@/lib/db/types";
+import type { MediaKind, MediaRow } from "@/lib/db/types";
 
 export async function findMediaByIds(circleId: string, ids: string[]): Promise<MediaRow[]> {
   if (ids.length === 0) return [];
@@ -16,10 +17,12 @@ export async function insertMedia(m: {
   path: string;
   mimeType: string;
   bytes: number;
+  kind?: MediaKind;
+  durationSec?: number | null;
 }): Promise<MediaRow> {
   const [row] = await sql<MediaRow[]>`
-    insert into media (id, circle_id, uploader_id, kind, path, mime_type, bytes)
-    values (${m.id}, ${m.circleId}, ${m.uploaderId}, 'photo', ${m.path}, ${m.mimeType}, ${m.bytes})
+    insert into media (id, circle_id, uploader_id, kind, path, mime_type, bytes, duration_sec)
+    values (${m.id}, ${m.circleId}, ${m.uploaderId}, ${m.kind ?? "photo"}, ${m.path}, ${m.mimeType}, ${m.bytes}, ${m.durationSec ?? null})
     on conflict (id) do update set id = excluded.id
     returning *`;
   return row!;
@@ -34,25 +37,29 @@ export async function attachPhotosToCard(input: {
   cardTitle: string;
   actorId: string;
   mediaIds: string[];
-}): Promise<number> {
+}): Promise<{ added: number; levelledUp: boolean }> {
   return sql.begin(async (tx) => {
-    const rows = await tx`
+    const rows = await tx<{ id: string; kind: MediaKind }[]>`
       update media set card_id = ${input.cardId}
       where circle_id = ${input.circleId} and uploader_id = ${input.actorId}
         and card_id is null and id = any(${input.mediaIds}::uuid[])
-      returning id`;
+      returning id, kind`;
+    const photos = rows.filter((r) => r.kind === "photo");
+    if (photos.length > 0) {
+      await tx`update cards set cover_media_id = coalesce(cover_media_id, ${photos[0]!.id}) where id = ${input.cardId}`;
+    }
     if (rows.length > 0) {
-      await tx`update cards set cover_media_id = coalesce(cover_media_id, ${rows[0]!.id}) where id = ${input.cardId}`;
+      const recordings = rows.filter((r) => r.kind !== "photo");
       await insertActivity(tx, {
         circleId: input.circleId,
         actorId: input.actorId,
-        type: "photos_added",
+        type: photos.length ? "photos_added" : "recording_added",
         wishId: input.wishId,
         refId: input.cardId,
-        payload: { count: rows.length, wish: input.wishText ?? input.cardTitle },
+        payload: { count: photos.length, kind: recordings[0]?.kind ?? null, wish: input.wishText ?? input.cardTitle },
       });
     }
-    return rows.length;
+    return { added: rows.length, levelledUp: rows.length > 0 && (await maybeLevelUp(tx, input.cardId)) };
   });
 }
 

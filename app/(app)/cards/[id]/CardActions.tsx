@@ -1,7 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CameraIcon, HeartFilled, MessageIcon, SendIcon } from "@/components/icons";
+import { CameraIcon, HeartFilled, MessageIcon, MicIcon, SendIcon, SparkleIcon, VideoIcon } from "@/components/icons";
+import { VoiceRecorder, readVideo, type Recording } from "@/components/Recorders";
 import { usePhotoUpload, type StorageConfig } from "@/components/usePhotoUpload";
 
 export function CardActions({
@@ -28,7 +29,50 @@ export function CardActions({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const { upload, stage } = usePhotoUpload(circleId, storage);
+  const { upload, uploadRecording, stage } = usePhotoUpload(circleId, storage);
+  const [recording, setRecording] = useState(false);
+  const [toast, setToast] = useState(false);
+  const videoInput = useRef<HTMLInputElement>(null);
+
+  function celebrate(levelledUp: unknown) {
+    if (levelledUp !== true) return;
+    setToast(true);
+    setTimeout(() => setToast(false), 4000);
+  }
+
+  async function attach(mediaIds: string[]) {
+    const res = await fetch(`/api/v1/cards/${cardId}/photos`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ mediaIds }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.error?.message ?? "That couldn’t be added.");
+    celebrate(data?.levelledUp);
+    router.refresh();
+  }
+
+  async function addRecording(r: Recording) {
+    setRecording(false);
+    setError(null);
+    try {
+      await attach([await uploadRecording(r.blob, r.type, r.durationSec)]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That couldn’t be added.");
+    }
+  }
+
+  async function pickVideo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) {
+      try {
+        await addRecording(await readVideo(file));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "We couldn’t use that video.");
+      }
+    }
+  }
 
   async function toggleLike() {
     const next = !liked;
@@ -58,6 +102,7 @@ export function CardActions({
     }).catch(() => null);
     setSending(false);
     if (!res?.ok) return setError("Your message didn’t send. Try again.");
+    celebrate((await res.json().catch(() => null))?.levelledUp);
     setDraft("");
     router.refresh();
   }
@@ -68,14 +113,7 @@ export function CardActions({
     if (!files.length) return;
     setError(null);
     try {
-      const mediaIds = await upload(files);
-      const res = await fetch(`/api/v1/cards/${cardId}/photos`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mediaIds }),
-      });
-      if (!res.ok) throw new Error("Those photos couldn’t be added.");
-      router.refresh();
+      await attach(await upload(files));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Those photos couldn’t be added.");
     }
@@ -86,6 +124,15 @@ export function CardActions({
 
   return (
     <>
+      {toast && (
+        <div
+          role="status"
+          className="reveal-fade-in fixed inset-x-0 top-4 z-30 mx-auto flex w-fit items-center gap-2 rounded-2xl border border-gold bg-gold-soft px-4 py-3 font-bold text-gold-ink shadow-lg"
+          data-testid="levelup-toast"
+        >
+          <SparkleIcon size={18} className="text-gold" /> ✨ Levelled up: this card is gold now
+        </div>
+      )}
       <div className="flex items-center gap-1 border-t border-[#E6EEF4] px-2 pt-1 pb-2">
         <button
           type="button"
@@ -135,7 +182,30 @@ export function CardActions({
             <SendIcon size={20} />
           </button>
         </form>
-        {stage !== "idle" && <p className="m-0 text-sm text-ink-3">{stage === "uploading" ? "Uploading photos…" : "Getting photos ready…"}</p>}
+        {recording ? (
+          <VoiceRecorder onDone={addRecording} onCancel={() => setRecording(false)} />
+        ) : (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={stage !== "idle"}
+              onClick={() => setRecording(true)}
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-field text-[15px] text-ink disabled:opacity-60"
+            >
+              <MicIcon size={18} className="text-primary" /> Voice note
+            </button>
+            <button
+              type="button"
+              disabled={stage !== "idle"}
+              onClick={() => videoInput.current?.click()}
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-field text-[15px] text-ink disabled:opacity-60"
+            >
+              <VideoIcon size={18} className="text-primary" /> Video
+            </button>
+            <input ref={videoInput} type="file" accept="video/mp4,video/webm,video/quicktime" capture="environment" className="sr-only" onChange={pickVideo} />
+          </div>
+        )}
+        {stage !== "idle" && <p className="m-0 text-sm text-ink-3">{stage === "uploading" ? "Uploading…" : "Getting it ready…"}</p>}
         {error && (
           <p role="alert" className="m-0 text-sm text-warm-ink">
             {error}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { readBody, route, notFound } from "@/lib/http";
+import { readBody, route, conflict, notFound } from "@/lib/http";
 import { requireApiUser } from "@/lib/auth/session";
 import { findCircleForMember } from "@/lib/db/queries/circles";
 import { createWish } from "@/lib/db/queries/wishes";
@@ -11,6 +11,7 @@ export const POST = route<{ id: string }>(async (req, { params }) => {
   const user = await requireApiUser();
   const circle = await findCircleForMember(z.uuid().parse(params.id), user.id);
   if (!circle) throw notFound();
+  if (circle.mode === "memorial") throw conflict("This book is a memorial album now. Share a memory instead.", "memorial_mode");
   const input = await readBody(req, WishInput);
   const wish = await createWish(circle.id, user.id, input);
   return NextResponse.json({ wish: { id: wish.id } }, { status: 201 });

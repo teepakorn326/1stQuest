@@ -77,4 +77,6 @@ export type CardInput = {
   images: string[];
   /** Set when retrying because the first draft used a word the app avoids. */
   avoid?: string[];
+  /** Memorial mode: the family is remembering the person. */
+  remembrance?: boolean;
 };

@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function WishesPage() {
   const user = await requirePageUser("/wishes");
   const circle = await getActiveCircle(user.id);
-  if (!circle) redirect("/home");
+  if (!circle || circle.mode === "memorial") redirect("/home");
   const wishes = await listVisibleWishes(circle.id, user.id, 100);
 
   return (

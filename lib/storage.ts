@@ -47,3 +47,16 @@ export async function downloadObject(path: string): Promise<Buffer | null> {
 export async function removeObjects(paths: string[]): Promise<void> {
   if (paths.length) await admin().storage.from(MEDIA_BUCKET).remove(paths);
 }
+
+export async function moveObject(from: string, to: string): Promise<void> {
+  const { error } = await admin().storage.from(MEDIA_BUCKET).move(from, to);
+  if (error) throw new Error(`storage move failed: ${error.message}`);
+}
+
+/** Stored size and type, so limits are checked against what was actually uploaded. */
+export async function objectInfo(path: string): Promise<{ size: number; contentType: string | null } | null> {
+  const { data, error } = await admin().storage.from(MEDIA_BUCKET).info(path);
+  if (error || !data) return null;
+  const meta = data as unknown as { size?: number; contentType?: string; metadata?: { size?: number; mimetype?: string } };
+  return { size: meta.size ?? meta.metadata?.size ?? 0, contentType: meta.contentType ?? meta.metadata?.mimetype ?? null };
+}

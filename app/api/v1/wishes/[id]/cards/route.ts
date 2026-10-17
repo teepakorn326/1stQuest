@@ -26,7 +26,7 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
   const { story, mediaIds } = await readBody(req, Body);
 
   const media = (await findMediaByIds(wish.circle_id, mediaIds)).filter((m) => m.uploader_id === user.id && !m.card_id);
-  if (!story && media.length === 0) throw badRequest("Add a photo or a few words about what happened.");
+  if (!story && media.length === 0) throw badRequest("Add a photo, a voice note or a few words about what happened.");
   const ordered = mediaIds.map((id) => media.find((m) => m.id === id)).filter((m) => m !== undefined);
   const circle = await findCircleForMember(wish.circle_id, user.id);
   if (!circle) throw notFound();
@@ -37,7 +37,7 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
       authorName: user.name ?? "Someone",
       wish: { text: wish.text, category: wish.category },
       story,
-      images: await photosForModel(ordered.map((m) => m.path)),
+      images: await photosForModel(ordered.filter((m) => m.kind === "photo").map((m) => m.path)),
     });
     const card = await createCard({
       circleId: wish.circle_id,

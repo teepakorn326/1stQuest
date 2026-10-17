@@ -2,11 +2,11 @@
 
 Every feature in the spec appears in exactly one list. Nothing is described as partially working: anything not fully working is under **Not built**.
 
-_Last updated: Phase 5 (rehearsal). Live at https://wish-circle-iota.vercel.app._
+_Last updated: Phase 6 (voice and video, card level-up, memorial mode). Live at https://wish-circle-iota.vercel.app._
 
 **Before you judge:**
 - **Sign-in is in dev mode.** No verified email sender is set up yet, so the sign-in link is shown on screen instead of emailed. This also means anyone can sign in as any email address, including the demo accounts. It makes the demo easy to try; it is not production auth. Setting `RESEND_API_KEY` and a verified `EMAIL_FROM` switches to real email with no code change.
-- Supabase’s free plan caps uploads at 50MB per file (photos are capped at 15MB anyway).
+- Supabase’s free plan caps uploads at 50MB per file, so videos are capped at 50MB rather than the spec’s 100MB.
 - `pnpm smoke` runs the whole demo loop below against the live URL with two people and the real AI. Last two runs: passed in 27s and 22s, with the live update reaching the other screen in 797 ms and 801 ms.
 
 ## Works live on the URL
@@ -54,13 +54,26 @@ _Last updated: Phase 5 (rehearsal). Live at https://wish-circle-iota.vercel.app.
 - The book, which has no finished state:
   - Collection: six category slots. Filled slots show fanned covers and a count; empty slots show a gentle prompt and “Add a wish”.
   - Timeline: cards grouped by “Month · season”, with seasons for the southern hemisphere.
-- Photos are only served through `GET /api/v1/media/:id`, which checks membership and visibility, then 302s to a 10-minute signed URL.
+- Voice notes and video, on Add moments and on any card.
+  - Voice notes are recorded in the browser (MediaRecorder), up to 5 minutes, and stop by themselves at 5:00.
+  - Videos are picked from the phone (or recorded with its camera), up to 2 minutes and 50MB.
+  - They upload the same way as photos. The server checks the stored file’s real type and size and keeps it as-is at `<circleId>/<mediaId>.<ext>`.
+  - They play on the card from the same gated media URL.
+- Card level-up: when 3 or more different members have contributed to a card (made it, added a photo, voice note or video, or left a message), it turns gold everywhere it appears, gets a “Gold card · the family loves this one” chip, and posts once to the feed. The person whose contribution tipped it over sees a one-time “✨ Levelled up” toast.
+- Memorial mode (owner only): a confirmation screen explains what changes; it can be undone for 30 days.
+  - Home becomes “Remembering <name>” with “Share a memory” and the newest cards (who shared each, and what it holds).
+  - The menu becomes Home / Book / Family.
+  - Adding wishes and “Talk it through” are put away: those pages redirect and the wish API refuses.
+  - The book’s empty slots ask for memories instead.
+  - “Share a memory” makes a card with no wish (photos, voice, video, a few words), and the AI writes it as a remembrance.
+  - Existing wishes, cards and messages all stay.
+- Photos, voice notes and videos are only served through `GET /api/v1/media/:id`, which checks membership and visibility, then 302s to a 10-minute signed URL.
 
 **Platform**
 - `GET /api/health` runs a real `SELECT 1`.
 - Every API route checks circle membership, validates input with zod, and returns `{ error: { code, message } }` without stack traces. Logs are structured JSON with a request id.
 - Every AI call has a 20s timeout and retries with backoff, and logs model, tokens and latency. Sonnet calls use the server-side refusal fallback.
-- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 75 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, copy lint). `pnpm smoke` is the Playwright demo-loop test.
+- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 80 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the third contributor, voice/video limits, memorial undo window, copy lint). `pnpm smoke` is the Playwright demo-loop test.
 
 ## Seeded for context
 
@@ -70,11 +83,9 @@ _Last updated: Phase 5 (rehearsal). Live at https://wish-circle-iota.vercel.app.
 
 ## Not built
 
-- Voice notes and video (the “voice or video” part of Add moments isn’t shown).
-- Card level-up (gold at 3+ contributors), and the “make it shine” chip from the design.
 - Likes on individual messages (in the design, not in the spec’s data model).
-- Memorial mode.
-- PDF export and slideshow (no export button is shown).
+- PDF export and slideshow (no export button is shown, including “Make a book for the service” in memorial mode).
+- Birth and death years on the memorial Home (the design shows “[Birth year] – [Year]”; the app doesn’t collect dates).
 - Choosing the hemisphere: every circle uses the southern hemisphere for seasons. The column exists, but there’s no setting.
 - Notes from the care team on plans (the feed design shows “Dr Lin left a note”).
 - Changing the circle’s photo or name after creation.
@@ -90,4 +101,8 @@ _Last updated: Phase 5 (rehearsal). Live at https://wish-circle-iota.vercel.app.
 - Photos are uploaded straight from the browser to Storage (signed upload URLs), then resized by the server. Vercel caps request bodies at 4.5MB, which is too small for 10 photos of up to 15MB through a route handler.
 - The card reveal uses the CSS keyframes from the design rather than framer-motion.
 - Banned words: every system prompt forbids them, and card text is also checked by code and rewritten. Chat replies and plan text rely on the prompt alone.
+- Voice and video length is checked in the browser (and capped at 5 minutes by the recorder). The server enforces type and size on the stored file but has no media probe to read duration.
+- A video’s 50MB cap (spec: 100MB) comes from Supabase’s free plan.
+- Level-up counts the card’s maker as a contributor, so a card needs two other people to turn gold.
+- Switching to memorial mode posts nothing to the activity feed, on purpose.
 - The smoke test creates its own circle on each run (and covers create circle and invite/join) instead of adding to Nana Rose’s circle, so the seeded demo stays clean.

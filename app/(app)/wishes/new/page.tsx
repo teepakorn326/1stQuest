@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function NewWishPage({ searchParams }: { searchParams: Promise<{ text?: string; category?: string }> }) {
   const user = await requirePageUser("/wishes/new");
   const circle = await getActiveCircle(user.id);
-  if (!circle) redirect("/home");
+  if (!circle || circle.mode === "memorial") redirect("/home");
   const sp = await searchParams;
   const members = (await listMembers(circle.id)).filter((m) => m.user_id !== user.id);
   const category = CATEGORIES.includes(sp.category as Category) ? (sp.category as Category) : null;

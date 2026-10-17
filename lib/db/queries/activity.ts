@@ -12,6 +12,7 @@ export type ActivityType =
   | "quest_claimed"
   | "quest_done"
   | "photos_added"
+  | "recording_added"
   | "card_created"
   | "card_message"
   | "card_levelled_up";
@@ -19,7 +20,7 @@ export type ActivityType =
 export const FEED_FILTERS = {
   all: null,
   quests: ["quest_claimed", "quest_done", "plan_generated"],
-  cards: ["photos_added", "card_created", "card_message", "card_levelled_up"],
+  cards: ["photos_added", "recording_added", "card_created", "card_message", "card_levelled_up"],
   wishes: ["wish_added", "plan_generated"],
 } as const satisfies Record<string, readonly ActivityType[] | null>;
 export type FeedFilter = keyof typeof FEED_FILTERS;

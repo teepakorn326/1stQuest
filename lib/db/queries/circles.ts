@@ -69,3 +69,9 @@ export async function updateMobility(input: {
     return circle!;
   });
 }
+
+export async function setCircleMode(circleId: string, mode: "active" | "memorial"): Promise<CircleRow> {
+  const [row] = await sql<CircleRow[]>`
+    update circles set mode = ${mode}, mode_changed_at = now() where id = ${circleId} returning *`;
+  return row!;
+}

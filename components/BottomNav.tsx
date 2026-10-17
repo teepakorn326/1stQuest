@@ -4,19 +4,27 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { BookIcon, HeartIcon, HomeIcon, PeopleIcon } from "@/components/icons";
 
-const items = [
+const ACTIVE = [
   { href: "/home", label: "Home", Icon: HomeIcon },
   { href: "/wishes", label: "Wishes", Icon: HeartIcon },
   { href: "/book", label: "Book", Icon: BookIcon },
   { href: "/circle", label: "Circle", Icon: PeopleIcon },
 ];
 
-export function BottomNav() {
+// Memorial mode: no wishes; "Circle" becomes "Family".
+const MEMORIAL = [
+  { href: "/home", label: "Home", Icon: HomeIcon },
+  { href: "/book", label: "Book", Icon: BookIcon },
+  { href: "/circle", label: "Family", Icon: PeopleIcon },
+];
+
+export function BottomNav({ memorial = false }: { memorial?: boolean }) {
+  const items = memorial ? MEMORIAL : ACTIVE;
   const path = usePathname();
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-[480px] grid-cols-4 border-t border-line bg-surface pb-[max(8px,env(safe-area-inset-bottom))]"
+      className={`fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-[480px] ${memorial ? "grid-cols-3" : "grid-cols-4"} border-t border-line bg-surface pb-[max(8px,env(safe-area-inset-bottom))]`}
     >
       {items.map(({ href, label, Icon }) => {
         const active = path === href || path.startsWith(`${href}/`);

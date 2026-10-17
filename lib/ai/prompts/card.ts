@@ -12,7 +12,9 @@ You write memory cards for a family book. A card has a title and a short body ab
 
 export function cardUserText(input: CardInput): string {
   const lines = [
-    `The card is about ${input.patientName}.`,
+    input.remembrance
+      ? `The family is remembering ${input.patientName}, who has died. Write it as a remembrance: warm, grateful, past tense, about who they were and what they gave. Not mournful, and no clichés about loss.`
+      : `The card is about ${input.patientName}.`,
     input.wish ? `It came from the wish (${input.wish.category}): ${input.wish.text}` : "It is a shared memory.",
     `${input.authorName}'s story: ${input.story.trim() || "(no words, only photos)"}`,
     `${input.images.length} photo(s) attached.`,

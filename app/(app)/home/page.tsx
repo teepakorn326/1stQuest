@@ -13,6 +13,8 @@ import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listActivity } from "@/lib/db/queries/activity";
 import { listMyCircles } from "@/lib/db/queries/circles";
 import { listVisibleWishes } from "@/lib/db/queries/wishes";
+import { listRecentCards } from "@/lib/db/queries/cards";
+import { MemorialHome } from "@/components/MemorialHome";
 import { WishRow } from "@/components/WishRow";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +37,16 @@ export default async function HomePage() {
           <PlusIcon size={22} /> Create a circle
         </ButtonLink>
       </main>
+    );
+  }
+
+  const photoSrc0 = circle.patient_photo_path ? `/api/v1/circles/${circle.id}/photo` : null;
+  if (circle.mode === "memorial") {
+    return (
+      <>
+        <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
+        <MemorialHome name={circle.patient_name} photoSrc={photoSrc0} cards={await listRecentCards(circle.id, user.id)} />
+      </>
     );
   }
 

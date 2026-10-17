@@ -89,3 +89,6 @@ export const MessageIcon = ({ size, className }: P) => (
 export const HeartFilled = ({ size, className, filled }: P & { filled?: boolean }) => (
   <svg {...base(size)} fill={filled ? "currentColor" : "none"} className={className}><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" /></svg>
 );
+export const VideoIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><rect x="3" y="6" width="13" height="12" rx="2" /><path d="M16 10l5-3v10l-5-3z" /></svg>
+);

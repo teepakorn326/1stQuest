@@ -63,3 +63,11 @@ export function canSeeCard(
   if (!card.wish_id || !card.wish_author_id || !card.wish_visibility) return true;
   return canSeeWish(viewer, { author_id: card.wish_author_id, visibility: card.wish_visibility }, chosenViewerIds);
 }
+
+export const MEMORIAL_UNDO_DAYS = 30;
+
+/** Last moment the owner can undo memorial mode, or null when not in memorial mode. */
+export function memorialUndoUntil(circle: Pick<CircleRow, "mode" | "mode_changed_at">): Date | null {
+  if (circle.mode !== "memorial" || !circle.mode_changed_at) return null;
+  return new Date(circle.mode_changed_at.getTime() + MEMORIAL_UNDO_DAYS * 24 * 60 * 60 * 1000);
+}

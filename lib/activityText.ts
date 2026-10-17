@@ -22,6 +22,8 @@ export function activityParts(a: Pick<ActivityItem, "type" | "payload">): { verb
       return { verb: "finished", object: str(p.title) };
     case "photos_added":
       return { verb: `added ${typeof p.count === "number" && p.count > 1 ? `${p.count} photos` : "a photo"} to`, object: str(p.wish) };
+    case "recording_added":
+      return { verb: p.kind === "video" ? "added a video to" : "added a voice note to", object: str(p.wish) };
     case "card_created":
       return { verb: "made a new card", object: str(p.title) };
     case "card_message":
@@ -41,7 +43,7 @@ export function describeActivity(a: Pick<ActivityItem, "type" | "payload">): str
 
 /** The wish an item belongs to, when it's not already the object. */
 export function activityContext(a: Pick<ActivityItem, "type" | "payload">): string | null {
-  if (a.type === "plan_generated" || a.type === "photos_added" || a.type === "wish_added") return null;
+  if (["plan_generated", "photos_added", "recording_added", "wish_added"].includes(a.type)) return null;
   return str((a.payload ?? {}).wish);
 }
 

@@ -12,5 +12,5 @@ export const POST = route<{ id: string }>(async (req, { params }) => {
   const card = await requireCard(params.id, user.id);
   const { text } = await readBody(req, Body);
   const msg = await addMessage(card, user.id, text);
-  return NextResponse.json({ message: { id: msg.id } }, { status: 201 });
+  return NextResponse.json({ message: { id: msg.id }, levelledUp: msg.levelledUp }, { status: 201 });
 });

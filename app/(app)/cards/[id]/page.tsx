@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CategoryIcon, ChevronLeft } from "@/components/icons";
+import { CategoryIcon, ChevronLeft, SparkleIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { Avatar } from "@/components/ui/Avatar";
 import { canSeeCard } from "@/lib/authz";
@@ -64,15 +64,24 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
         <Link href="/book" aria-label="Back to the book" className="flex h-11 w-11 items-center justify-center rounded-xl text-ink hover:text-ink">
           <ChevronLeft />
         </Link>
-        <span className="flex items-center gap-1.5 rounded-2xl bg-tint px-3 py-1.5 text-sm font-bold text-primary-hover">
-          <CategoryIcon category={card.category} size={18} />
-          {CATEGORY_LABEL[card.category]}
-        </span>
+        {card.level > 0 ? (
+          <span className="flex items-center gap-1.5 rounded-2xl bg-gold-soft px-3 py-1.5 text-sm font-bold text-gold-ink" data-testid="gold-chip">
+            <SparkleIcon size={16} className="text-gold" /> Gold card · the family loves this one
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 rounded-2xl bg-tint px-3 py-1.5 text-sm font-bold text-primary-hover">
+            <CategoryIcon category={card.category} size={18} />
+            {CATEGORY_LABEL[card.category]}
+          </span>
+        )}
         <span className="w-11" />
       </header>
 
       <div className="flex flex-col gap-3 px-5 pt-1.5 pb-5">
-        <article className="flex flex-col overflow-hidden rounded-[20px] border-4 border-[#BFD8EE] bg-surface">
+        <article
+          className={`flex flex-col overflow-hidden rounded-[20px] border-4 bg-surface ${card.level > 0 ? "border-gold" : "border-[#BFD8EE]"}`}
+          data-level={card.level}
+        >
           <PhotoGrid ids={card.photo_ids} />
           <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3">
             <h1 className="m-0 text-xl leading-tight font-bold">{card.title}</h1>
@@ -82,6 +91,19 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
               {card.place ? ` · ${card.place}` : ""} ·{" "}
               {card.happened_on.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}
             </p>
+            {card.recordings.map((r) => (
+              <div key={r.id} className="flex flex-col gap-1.5 rounded-[14px] bg-[#EEF4F9] p-2.5" data-testid="recording">
+                <span className="text-sm text-ink-2">
+                  {r.kind === "voice" ? "Voice note" : "Video"} from {r.uploader_id === user.id ? "you" : (r.uploader_name ?? "someone")}
+                  {r.duration_sec ? ` · ${Math.floor(r.duration_sec / 60)}:${String(r.duration_sec % 60).padStart(2, "0")}` : ""}
+                </span>
+                {r.kind === "voice" ? (
+                  <audio controls preload="none" src={`/api/v1/media/${r.id}`} className="w-full" />
+                ) : (
+                  <video controls playsInline preload="metadata" src={`/api/v1/media/${r.id}`} className="max-h-64 w-full rounded-lg bg-black" />
+                )}
+              </div>
+            ))}
             {card.wish_id && card.wish_text && (
               <Link href={`/wishes/${card.wish_id}`} className="text-sm font-bold no-underline">
                 From the wish: {card.wish_text}

@@ -7,6 +7,11 @@ import { CardReveal } from "./CardReveal";
 
 export const dynamic = "force-dynamic";
 
+function creditLine(photos: number, storyBy: string): string {
+  if (photos === 0) return `Made from ${storyBy} story`;
+  return `Made from ${photos === 1 ? "1 photo" : `${photos} photos`} and ${storyBy} story`;
+}
+
 export default async function NewCardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requirePageUser(`/cards/${id}/new`);
@@ -23,7 +28,7 @@ export default async function NewCardPage({ params }: { params: Promise<{ id: st
         category: card.category,
         coverId: card.cover_media_id,
         dateLabel: card.happened_on.toLocaleDateString("en-AU", { month: "long", year: "numeric", timeZone: "UTC" }),
-        credit: `Made from ${card.photo_ids.length === 1 ? "1 photo" : `${card.photo_ids.length} photos`} and ${card.author_id === user.id ? "your" : `${card.author_name ?? "someone"}’s`} story`,
+        credit: creditLine(card.photo_ids.length, card.author_id === user.id ? "your" : `${card.author_name ?? "someone"}’s`),
         wishText: card.wish_text,
         canEdit: card.author_id === user.id,
       }}

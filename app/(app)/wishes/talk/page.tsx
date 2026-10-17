@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function TalkPage() {
   const user = await requirePageUser("/wishes/talk");
   const circle = await getActiveCircle(user.id);
-  if (!circle) redirect("/home");
+  if (!circle || circle.mode === "memorial") redirect("/home");
   const speakerIsPatient = circle.set_up_by_patient && circle.role === "owner";
   const conversationId = await ensureConversation(circle.id, user.id, talkOpener(circle.patient_name, speakerIsPatient));
   const messages = await listConversationMessages(conversationId);
