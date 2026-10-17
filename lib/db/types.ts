@@ -1,0 +1,173 @@
+// Hand-written row types. Keep in sync with db/migrations/*.sql.
+
+export type Mobility = "walks_alone" | "short_walks_with_help" | "wheelchair" | "mostly_resting";
+export type Role = "owner" | "family" | "doctor";
+export type InviteRole = Exclude<Role, "owner">;
+export type CircleMode = "active" | "memorial";
+export type Hemisphere = "north" | "south";
+export type Category = "places" | "tastes" | "people" | "music" | "nature" | "legacy";
+export type Visibility = "circle" | "chosen" | "private";
+export type QuestStatus = "open" | "in_progress" | "done" | "locked";
+export type MediaKind = "photo" | "voice" | "video";
+
+export const MOBILITIES: readonly Mobility[] = ["walks_alone", "short_walks_with_help", "wheelchair", "mostly_resting"];
+export const CATEGORIES: readonly Category[] = ["places", "tastes", "people", "music", "nature", "legacy"];
+
+export interface UserRow {
+  id: string;
+  email: string;
+  name: string | null;
+  password_hash: string | null;
+  created_at: Date;
+}
+
+export interface SessionRow {
+  id: string;
+  user_id: string;
+  expires_at: Date;
+  created_at: Date;
+}
+
+export interface MagicLinkRow {
+  token_hash: string;
+  email: string;
+  next_path: string | null;
+  expires_at: Date;
+  used_at: Date | null;
+  created_at: Date;
+}
+
+export interface CircleRow {
+  id: string;
+  patient_name: string;
+  patient_photo_path: string | null;
+  mobility: Mobility;
+  mobility_notes: string | null;
+  set_up_by_patient: boolean;
+  hemisphere: Hemisphere;
+  mode: CircleMode;
+  mode_changed_at: Date | null;
+  created_at: Date;
+}
+
+export interface MembershipRow {
+  circle_id: string;
+  user_id: string;
+  role: Role;
+  joined_at: Date;
+}
+
+export interface InviteRow {
+  id: string;
+  circle_id: string;
+  role: InviteRole;
+  token: string;
+  created_by: string;
+  expires_at: Date;
+  used_by_user_id: string | null;
+  created_at: Date;
+}
+
+export interface WishRow {
+  id: string;
+  circle_id: string;
+  author_id: string;
+  text: string;
+  category: Category;
+  visibility: Visibility;
+  created_at: Date;
+}
+
+export interface WishViewerRow {
+  wish_id: string;
+  user_id: string;
+}
+
+export interface PlanRow {
+  id: string;
+  wish_id: string;
+  text: string;
+  based_on_mobility: Mobility;
+  needs_care_team: boolean;
+  generated_at: Date;
+}
+
+export interface QuestRow {
+  id: string;
+  wish_id: string;
+  plan_id: string | null;
+  title: string;
+  status: QuestStatus;
+  needs_care_team: boolean;
+  claimed_by_user_id: string | null;
+  position: number;
+  updated_at: Date;
+}
+
+export interface CardRow {
+  id: string;
+  wish_id: string | null;
+  circle_id: string;
+  author_id: string | null;
+  category: Category;
+  title: string;
+  body: string;
+  story: string | null;
+  place: string | null;
+  happened_on: Date;
+  cover_media_id: string | null;
+  level: number;
+  created_at: Date;
+}
+
+export interface MediaRow {
+  id: string;
+  circle_id: string;
+  card_id: string | null;
+  uploader_id: string | null;
+  kind: MediaKind;
+  path: string;
+  mime_type: string;
+  bytes: number;
+  duration_sec: number | null;
+  created_at: Date;
+}
+
+export interface CardMessageRow {
+  id: string;
+  card_id: string;
+  author_id: string;
+  text: string;
+  created_at: Date;
+}
+
+export interface CardLikeRow {
+  card_id: string;
+  user_id: string;
+  created_at: Date;
+}
+
+export interface ActivityRow {
+  id: string;
+  circle_id: string;
+  actor_id: string | null;
+  type: string;
+  ref_id: string | null;
+  payload: Record<string, unknown>;
+  created_at: Date;
+}
+
+export interface ConversationRow {
+  id: string;
+  circle_id: string;
+  user_id: string;
+  created_at: Date;
+}
+
+export interface ConversationMessageRow {
+  id: string;
+  conversation_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: Date;
+}
