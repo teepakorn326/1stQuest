@@ -35,7 +35,7 @@ const TONES = ["bg-[#FFE3B8]", "bg-[#FFD497]", "bg-[#FFDFAE]"];
 
 function Cover({ card, className }: { card: BookCard; className?: string }) {
   return (
-    <div className={clsx("overflow-hidden", card.level > 0 ? "border-[3px] border-gold" : "border-2 border-white", className)}>
+    <div className={clsx("relative overflow-hidden", card.level > 0 ? "gold-frame-cover border-[3px]" : "border-2 border-white", className)}>
       {card.cover_media_id ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={`/api/v1/media/${card.cover_media_id}`} alt="" className="h-full w-full object-cover" />
@@ -120,7 +120,7 @@ function Timeline({ cards, hemisphere }: { cards: BookCard[]; hemisphere: "north
               href={`/cards/${c.id}`}
               className={clsx(
                 "flex gap-3.5 rounded-2xl bg-surface p-3 text-ink no-underline hover:text-ink",
-                c.level > 0 ? "gold-glow border-[3px] border-gold" : "border border-line",
+                c.level > 0 ? "gold-glow gold-frame relative overflow-hidden border-[3px]" : "border border-line",
               )}
             >
               <Cover card={c} className="h-[92px] w-[76px] shrink-0 rounded-[10px] !border-0 bg-[#FFD497]" />

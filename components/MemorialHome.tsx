@@ -50,7 +50,7 @@ export function MemorialHome({ name, photoSrc, cards, canPost }: { name: string;
             href={`/cards/${c.id}`}
             className={clsx(
               "flex gap-3.5 rounded-2xl bg-surface p-3 text-ink no-underline hover:text-ink",
-              c.level > 0 ? "border-[3px] border-gold" : "border border-line",
+              c.level > 0 ? "gold-frame border-[3px]" : "border border-line",
             )}
           >
             <div className="flex h-[92px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-[#FFDFAE] text-primary">

@@ -33,7 +33,7 @@ export default async function SharedCardPage({ params }: { params: Promise<{ tok
       <div className="relative isolate">
       {card.level > 0 && <span aria-hidden className="gold-aura" />}
       <article
-        className={`relative z-10 flex flex-col overflow-hidden rounded-[20px] border-4 bg-surface ${card.level > 0 ? "gold-card border-gold" : "border-[#F3E2C6]"}`}
+        className={`relative z-10 flex flex-col overflow-hidden rounded-[20px] border-4 bg-surface ${card.level > 0 ? "gold-card gold-frame" : "border-[#F3E2C6]"}`}
         data-testid="shared-card"
       >
         {card.photo_ids[0] && (
