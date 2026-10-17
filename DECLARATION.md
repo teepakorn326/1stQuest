@@ -2,7 +2,9 @@
 
 Every feature in the spec appears in exactly one list. Nothing is described as partially working; a feature not fully working is under **Not built**. Updated at the end of each phase.
 
-_Last updated: Phase 1 (foundation)._
+_Last updated: Phase 1 (foundation), deployed at https://wish-circle-iota.vercel.app._
+
+Right now the live site has no verified email sender, so sign-in uses the on-screen dev link. Supabase’s free plan caps uploads at 50MB per file.
 
 ## Works live on the URL
 
