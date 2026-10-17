@@ -10,7 +10,7 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   use: {
-    baseURL: process.env.SMOKE_BASE_URL ?? "https://wish-circle-iota.vercel.app",
+    baseURL: process.env.SMOKE_BASE_URL ?? "https://1stquest.vercel.app",
     ...devices["iPhone 13"],
     browserName: "chromium",
     trace: "retain-on-failure",

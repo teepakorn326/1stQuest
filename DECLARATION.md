@@ -2,7 +2,7 @@
 
 Every feature in the spec appears in exactly one list. Nothing is described as partially working: anything not fully working is under **Not built**.
 
-_Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owner-only posting, comments instead of likes, gold animation, microphone on New wish, card share links, notifications by app and text). Live at https://wish-circle-iota.vercel.app._
+_Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owner-only posting, comments instead of likes, gold animation, microphone on New wish, card share links, notifications by app and text). Live at https://1stquest.vercel.app._
 
 **Before you judge:**
 - **Text messages are in dev mode.** ClickSend isn’t configured yet, so texts are prepared and logged, not sent. Setting `CLICKSEND_USERNAME` and `CLICKSEND_API_KEY` (and optionally `CLICKSEND_FROM`) turns them on with no code change.

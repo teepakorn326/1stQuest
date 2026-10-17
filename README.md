@@ -2,7 +2,7 @@
 
 A shared place for one person’s wishes, and the people who help make them happen. Family, friends and a doctor join a circle around one person, record wishes, plan them together, and keep memory cards in a shared book.
 
-**Live:** https://wish-circle-iota.vercel.app · **What works, what’s seeded, what isn’t built:** [DECLARATION.md](DECLARATION.md)
+**Live:** https://1stquest.vercel.app (the old address, wish-circle-iota.vercel.app, still works so earlier links and QR codes keep working) · **What works, what’s seeded, what isn’t built:** [DECLARATION.md](DECLARATION.md)
 
 Next.js 15 (App Router) · Postgres via raw SQL (`postgres.js`, no ORM) · Supabase (Postgres, Storage, Realtime) · Claude (Haiku 5.5 for chat, Sonnet 5.5 for plans and cards) · Vercel.
 
