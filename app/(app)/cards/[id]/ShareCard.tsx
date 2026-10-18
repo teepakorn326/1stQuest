@@ -62,7 +62,7 @@ export function ShareCard({ cardId, initialUrl, title }: { cardId: string; initi
       {url ? (
         <>
           <span className="text-[15px] font-bold">Anyone with this link can see this card</span>
-          <span className="text-sm text-ink-3">Only this card: not the rest of the book, the circle, or the messages.</span>
+          <span className="text-sm text-ink-3">This card and its messages, and anyone with the link can leave one. Not the rest of the book or the circle.</span>
           <div className="flex gap-2">
             <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} className="h-11 min-w-0 flex-1 rounded-xl border-[1.5px] border-field px-3 text-sm" data-testid="share-url" />
             <button type="button" onClick={() => send(url)} className="h-11 rounded-xl bg-cta px-3.5 text-[15px] font-bold text-cta-ink">

@@ -4,6 +4,7 @@ import { CategoryIcon } from "@/components/icons";
 import { CATEGORY_LABEL } from "@/lib/activityText";
 import { findSharedCard } from "@/lib/db/queries/cards";
 import { VoicePlayer } from "@/components/VoicePlayer";
+import { SharedComments } from "./SharedComments";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   };
 }
 
-/** Public view of one shared card. No sign-in, and nothing from the circle beyond this card. */
+/** Public view of one shared card and its messages. No sign-in; anyone with the link can leave a message. */
 export default async function SharedCardPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const card = await load(token);
@@ -66,6 +67,7 @@ export default async function SharedCardPage({ params }: { params: Promise<{ tok
         </div>
       </article>
       </div>
+      <SharedComments token={token} patientName={card.patient_name} messages={card.messages} />
     </main>
   );
 }

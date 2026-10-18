@@ -10,6 +10,7 @@ import { findCircleForMember } from "@/lib/db/queries/circles";
 import { realtimeConfig } from "@/lib/realtime";
 import { CardActions } from "./CardActions";
 import { ShareCard } from "./ShareCard";
+import { RemoveGuestComment } from "./RemoveGuestComment";
 import { appUrl } from "@/lib/env";
 import { GoldCardFrame } from "@/components/GoldCardFrame";
 import { VoicePlayer } from "@/components/VoicePlayer";
@@ -128,13 +129,15 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
           <h2 className="m-0 text-base font-bold">Messages for {patient}</h2>
           {card.messages.length === 0 && <p className="m-0 text-[15px] text-ink-3">No messages yet. Be the first to leave one.</p>}
           {card.messages.map((m) => (
-            <div key={m.id} className="flex items-start gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-2.5">
-              <Avatar name={m.author_name} seed={m.author_id} />
+            <div key={m.id} className="flex items-start gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-2.5" data-testid={m.author_id ? "message" : "guest-message"}>
+              <Avatar name={m.author_name ?? m.guest_name ?? "?"} seed={m.author_id ?? m.id} />
               <p className="m-0 flex-1 pt-0.5 text-[15px] leading-snug">
-                <b>{m.author_id === user.id ? "You" : (m.author_name ?? "Someone")}</b>
+                <b>{m.author_id === user.id ? "You" : (m.author_name ?? m.guest_name ?? "Someone")}</b>
+                {!m.author_id && <span className="ml-1.5 rounded-md bg-tint px-1.5 py-0.5 text-xs font-bold text-primary-hover">via shared link</span>}
                 <br />
                 {m.text}
               </p>
+              {!m.author_id && manages(card.viewer_role) && <RemoveGuestComment cardId={card.id} messageId={m.id} />}
             </div>
           ))}
         </section>

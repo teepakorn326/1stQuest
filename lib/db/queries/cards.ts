@@ -64,7 +64,8 @@ export type CardDetail = CardRow & {
   viewer_ids: string[];
   photo_ids: string[];
   recordings: { id: string; kind: "voice" | "video"; duration_sec: number | null; uploader_id: string | null; uploader_name: string | null }[];
-  messages: { id: string; author_id: string; author_name: string | null; text: string; created_at: string }[];
+  /** author_id is null for a comment left from the public share link (guest_name is set instead). */
+  messages: { id: string; author_id: string | null; author_name: string | null; guest_name: string | null; text: string; created_at: string }[];
 };
 
 /** Card + everything its page needs, in one query. Null if the viewer isn't in the circle. */
@@ -79,7 +80,7 @@ export async function findCardForMember(cardId: string, viewerId: string): Promi
                 from media md left join users uu on uu.id = md.uploader_id
                 where md.card_id = c.id and md.kind <> 'photo'), '[]') as recordings,
       coalesce((select json_agg(json_build_object('id', cm.id, 'author_id', cm.author_id, 'author_name', mu.name,
-                  'text', cm.text, 'created_at', cm.created_at) order by cm.created_at)
+                  'guest_name', cm.guest_name, 'text', cm.text, 'created_at', cm.created_at) order by cm.created_at)
                 from card_messages cm left join users mu on mu.id = cm.author_id where cm.card_id = c.id), '[]') as messages
     from cards c
     join memberships m on m.circle_id = c.circle_id and m.user_id = ${viewerId}
@@ -187,6 +188,8 @@ export type SharedCard = Pick<CardRow, "id" | "title" | "body" | "category" | "h
   patient_name: string;
   photo_ids: string[];
   recordings: { id: string; kind: "voice" | "video"; duration_sec: number | null }[];
+  /** All comments on the card, shown publicly on its shared page. */
+  messages: { id: string; name: string; text: string; created_at: string; guest: boolean }[];
 };
 
 /** What a public share link shows: the card itself and nothing else from the circle. */
@@ -196,7 +199,11 @@ export async function findSharedCard(token: string): Promise<SharedCard | null> 
       coalesce((select array_agg(m.id order by (m.id = c.cover_media_id) desc, m.created_at)
                 from media m where m.card_id = c.id and m.kind = 'photo'), '{}') as photo_ids,
       coalesce((select json_agg(json_build_object('id', m.id, 'kind', m.kind, 'duration_sec', m.duration_sec) order by m.created_at)
-                from media m where m.card_id = c.id and m.kind <> 'photo'), '[]') as recordings
+                from media m where m.card_id = c.id and m.kind <> 'photo'), '[]') as recordings,
+      -- Every comment on the card is public on its shared page: the family's and those left from the link.
+      coalesce((select json_agg(json_build_object('id', cm.id, 'name', coalesce(mu.name, cm.guest_name, 'Someone'), 'text', cm.text,
+                  'created_at', cm.created_at, 'guest', cm.author_id is null) order by cm.created_at)
+                from card_messages cm left join users mu on mu.id = cm.author_id where cm.card_id = c.id), '[]') as messages
     from cards c join circles ci on ci.id = c.circle_id
     where c.share_token = ${token}`;
   return row ?? null;
@@ -208,4 +215,43 @@ export async function findSharedMediaPath(token: string, mediaId: string): Promi
     select m.path from media m join cards c on c.id = m.card_id
     where c.share_token = ${token} and m.id = ${mediaId}`;
   return row?.path ?? null;
+}
+
+const GUEST_LIMIT = 5; // comments per person (IP) per card every 10 minutes
+
+/**
+ * A comment from a card's public share link (no account). Null if the link no longer works;
+ * "rate_limited" after 5 comments from the same connection in 10 minutes.
+ */
+export async function addGuestMessage(
+  token: string,
+  guest: { name: string; text: string; key: string },
+): Promise<{ id: string; levelledUp: boolean } | "rate_limited" | null> {
+  return sql.begin(async (tx) => {
+    const [card] = await tx<{ id: string; circle_id: string; wish_id: string | null; title: string }[]>`
+      select id, circle_id, wish_id, title from cards where share_token = ${token} for update`;
+    if (!card) return null;
+    const [recent] = await tx<{ n: number }[]>`
+      select count(*)::int as n from card_messages
+      where card_id = ${card.id} and guest_key = ${guest.key} and created_at > now() - interval '10 minutes'`;
+    if ((recent?.n ?? 0) >= GUEST_LIMIT) return "rate_limited" as const;
+    const [row] = await tx<{ id: string }[]>`
+      insert into card_messages (card_id, author_id, guest_name, guest_key, text)
+      values (${card.id}, null, ${guest.name}, ${guest.key}, ${guest.text}) returning id`;
+    await insertActivity(tx, {
+      circleId: card.circle_id,
+      actorId: null,
+      type: "card_message",
+      wishId: card.wish_id,
+      refId: card.id,
+      payload: { title: card.title, guest: guest.name },
+    });
+    return { id: row!.id, levelledUp: await maybeLevelUp(tx, card.id) };
+  });
+}
+
+/** The owner or a caretaker removes a comment left from the share link. */
+export async function removeGuestMessage(cardId: string, messageId: string): Promise<boolean> {
+  const rows = await sql`delete from card_messages where id = ${messageId} and card_id = ${cardId} and author_id is null returning id`;
+  return rows.length > 0;
 }
