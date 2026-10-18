@@ -1,12 +1,27 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { ExportIcon } from "@/components/icons";
 
-/** The card's owner can share this one card with anyone by link, and stop sharing any time. */
+/** The owner or a caretaker shares this one card with anyone by link (and a QR code), and can stop any time. */
 export function ShareCard({ cardId, initialUrl, title }: { cardId: string; initialUrl: string | null; title: string }) {
   const [url, setUrl] = useState(initialUrl);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [qr, setQr] = useState<{ svg: string; png: string } | null>(null);
+
+  // A QR code for the share link, so someone can scan it from your screen or a printout.
+  useEffect(() => {
+    if (!url) return setQr(null);
+    const style = { errorCorrectionLevel: "M" as const, margin: 1, color: { dark: "#33261A", light: "#FFFFFF" } };
+    let live = true;
+    Promise.all([QRCode.toString(url, { ...style, type: "svg" }), QRCode.toDataURL(url, { ...style, width: 600 })])
+      .then(([svg, png]) => live && setQr({ svg, png }))
+      .catch(() => live && setQr(null));
+    return () => {
+      live = false;
+    };
+  }, [url]);
 
   async function start() {
     setBusy(true);
@@ -54,6 +69,20 @@ export function ShareCard({ cardId, initialUrl, title }: { cardId: string; initi
               Share
             </button>
           </div>
+          {qr && (
+            <div className="mt-1 flex flex-col items-center gap-2 rounded-[14px] border border-line bg-[#FFFDF8] px-4 py-4" data-testid="share-qr">
+              <div
+                role="img"
+                aria-label={`QR code for the link to “${title}”`}
+                className="h-[176px] w-[176px] [&>svg]:h-full [&>svg]:w-full"
+                dangerouslySetInnerHTML={{ __html: qr.svg }}
+              />
+              <p className="m-0 text-center text-sm text-ink-2">Scan with a phone camera to open this card</p>
+              <a href={qr.png} download={`${title.replace(/[^\w\s-]/g, "").trim().slice(0, 40) || "card"} QR.png`} className="min-h-10 text-[15px] font-bold no-underline">
+                Save the QR code
+              </a>
+            </div>
+          )}
           <button type="button" onClick={stop} disabled={busy} className="min-h-11 self-start text-[15px] font-bold text-primary">
             Stop sharing
           </button>

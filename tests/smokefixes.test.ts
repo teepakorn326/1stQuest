@@ -47,7 +47,7 @@ d("public share link", async () => {
     await media.insertMedia({ id: p2, circleId, uploaderId: owner, path: `${circleId}/${p2}.jpg`, mimeType: "image/jpeg", bytes: 1 });
     await cards.createCard({ circleId, authorId: owner, wish: null, category: "people", title: "Private", body: "B", story: "S", place: null, mediaIds: [p2] });
 
-    expect(await cards.setCardShare(shared.id, other, "nope-not-author")).toBeUndefined();
+    expect(await cards.setCardShare(shared.id, other, "nope-not-a-caretaker")).toBeUndefined();
     const t1 = await cards.setCardShare(shared.id, owner, "token-aaaaaaaaaaaa");
     const t2 = await cards.setCardShare(shared.id, owner, "token-bbbbbbbbbbbb");
     expect(t1).toBe("token-aaaaaaaaaaaa");

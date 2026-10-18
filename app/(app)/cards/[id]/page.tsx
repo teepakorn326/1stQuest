@@ -121,7 +121,7 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
           />
         </GoldCardFrame>
 
-        {manages(card.viewer_role) && card.author_id === user.id && (
+        {manages(card.viewer_role) && (
           <ShareCard cardId={card.id} title={card.title} initialUrl={card.share_token ? `${appUrl()}/s/${card.share_token}` : null} />
         )}
         <section className="flex flex-col gap-2" data-testid="messages">

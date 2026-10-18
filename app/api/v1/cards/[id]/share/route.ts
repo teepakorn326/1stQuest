@@ -9,8 +9,8 @@ import { appUrl } from "@/lib/env";
 
 async function requireOwnCard(id: string, userId: string) {
   const card = await requireCard(id, userId);
-  if (!canPost({ userId, role: card.viewer_role }) || card.author_id !== userId) {
-    throw forbidden("Only the person who made this card can share it.");
+  if (!canPost({ userId, role: card.viewer_role })) {
+    throw forbidden("Only the owner and caretakers can share a card.");
   }
   return card;
 }
