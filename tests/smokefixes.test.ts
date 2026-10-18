@@ -62,4 +62,23 @@ d("public share link", async () => {
     expect(await cards.findSharedCard(t1!)).toBeNull();
     expect(await cards.findSharedMediaPath(t1!, p1)).toBeNull();
   });
+  it("anyone with the share link can comment; all comments are public there; caretakers remove guest ones", async () => {
+    const card = await cards.createCard({ circleId, authorId: owner, wish: null, category: "places", title: "Guestbook", body: "B", story: "S", place: null, mediaIds: [] });
+    const detail = (await cards.findCardForMember(card.id, owner))!;
+    await cards.addMessage(detail, owner, "From the family");
+    expect(await cards.addGuestMessage("no-such-token-123", { name: "X", text: "hi", key: "k" })).toBeNull();
+    const token = (await cards.setCardShare(card.id, owner, "token-guestbook-12345"))!;
+    const first = await cards.addGuestMessage(token, { name: "Aunty Noi", text: "Beautiful day", key: "ip-1" });
+    expect(first).toMatchObject({ levelledUp: false }); // already gold from the family's comment
+    const view = (await cards.findSharedCard(token))!;
+    expect(view.messages.map((m) => [m.text, m.guest])).toEqual([["From the family", false], ["Beautiful day", true]]);
+    const inCircle = (await cards.findCardForMember(card.id, owner))!;
+    expect(inCircle.messages.find((m) => !m.author_id)?.guest_name).toBe("Aunty Noi");
+    for (let i = 0; i < 5; i++) expect(await cards.addGuestMessage(token, { name: "Spam", text: `x${i}`, key: "ip-2" })).not.toBe("rate_limited");
+    expect(await cards.addGuestMessage(token, { name: "Spam", text: "x6", key: "ip-2" })).toBe("rate_limited"); // 6th in 10 minutes
+    expect(await cards.removeGuestMessage(card.id, (first as { id: string }).id)).toBe(true);
+    const familyId = inCircle.messages.find((m) => m.author_id)!.id;
+    expect(await cards.removeGuestMessage(card.id, familyId)).toBe(false); // only guest comments
+  });
+
 });
