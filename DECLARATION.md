@@ -12,7 +12,7 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 ## Works live on the URL
 
 **Accounts and circles**
-- Sign in with a 6-digit code sent to your email or mobile number (replaced the magic link after the 18 Oct feedback). Codes work once, expire in 10 minutes, allow 5 wrong tries, and at most 5 can be requested per address every 15 minutes. Only a keyed hash is stored. A new email creates an account, but texts only go to a number already on an account (one a caretaker added, or one saved from Welcome/Circle); a number can belong to one account only. Old magic links still work until they expire.
+- Sign in with a 6-digit code sent to your email or mobile number (replaced the magic link after the 18 Oct feedback). Codes work once, expire in 10 minutes (asking again doesn’t cancel an earlier code), allow 5 wrong tries, and at most 5 can be requested per address every 15 minutes. Only a keyed hash is stored. A new email creates an account, but texts only go to a number already on an account (one a caretaker added, or one saved from Welcome/Circle); a number can belong to one account only. Old magic links still work until they expire.
 - Optional password: set it from the Circle tab, then sign in with email and password.
 - Sign out shows “Signing out…” and ignores repeat taps, then loads the sign-in page fresh. Before, a slow first response made people tap again, so it looked like it took more than one try.
 - First-time name prompt (“What should the family call you?”).

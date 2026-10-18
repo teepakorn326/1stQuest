@@ -13,15 +13,14 @@ export async function countRecentLoginCodes(contact: string, minutes: number): P
   return row?.n ?? 0;
 }
 
-export type LiveCode = { id: string; code_hash: string; next_path: string | null; attempts: number; expired: boolean };
+export type LiveCode = { id: string; code_hash: string; next_path: string | null; attempts: number };
 
-/** The newest unused code for this email or number (a new request replaces the old one). */
-export async function latestLoginCode(contact: string): Promise<LiveCode | null> {
-  const [row] = await sql<LiveCode[]>`
-    select id, code_hash, next_path, attempts, (expires_at <= now()) as expired
-    from login_codes where contact = ${contact} and used_at is null
-    order by created_at desc limit 1`;
-  return row ?? null;
+/** Unused, unexpired codes for this email or number, newest first (asking again doesn't cancel the earlier one). */
+export async function liveLoginCodes(contact: string): Promise<LiveCode[]> {
+  return sql<LiveCode[]>`
+    select id, code_hash, next_path, attempts
+    from login_codes where contact = ${contact} and used_at is null and expires_at > now()
+    order by created_at desc limit 5`;
 }
 
 export async function recordWrongAttempt(id: string): Promise<void> {

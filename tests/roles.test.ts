@@ -75,6 +75,12 @@ d("caretakers create circles and add people; sign-in codes", async () => {
     expect(await codes.checkLoginCode(who, issued.code)).toEqual({ ok: true, next: "/join/x" });
     expect(await codes.checkLoginCode(who, issued.code)).toEqual({ ok: false, reason: "expired" }); // used
 
+    // Asking twice: the first code still works.
+    const first = await codes.issueLoginCode(who, "/a");
+    const second = await codes.issueLoginCode(who, "/b");
+    if (!("code" in first) || !("code" in second)) throw new Error("rate limited");
+    expect(await codes.checkLoginCode(who, first.code)).toEqual({ ok: true, next: "/a" });
+
     const again = await codes.issueLoginCode(who, null);
     if (!("code" in again)) throw new Error("rate limited");
     const bad = again.code === "000000" ? "111111" : "000000";
