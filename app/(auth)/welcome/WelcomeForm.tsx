@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneInput } from "@/components/PhoneInput";
+import { phoneProblem } from "@/lib/validate";
 import { Button } from "@/components/ui/Button";
 import { FormError, Input, Label } from "@/components/ui/Field";
 
@@ -9,14 +10,18 @@ export function WelcomeForm({ next }: { next: string }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [optIn, setOptIn] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
+    const problem = phoneProblem(phone);
+    setPhoneError(problem);
+    if (problem) return;
+    setBusy(true);
     // Mobile number first, so a typo shows here before we move on.
     if (phone.trim()) {
       const r = await fetch("/api/v1/me/phone", {
@@ -54,7 +59,7 @@ export function WelcomeForm({ next }: { next: string }) {
       <Label htmlFor="phone" className="mt-2">
         Mobile number <span className="font-normal text-ink-3">(optional)</span>
       </Label>
-      <PhoneInput id="phone" value={null} onChange={setPhone} testId="welcome-phone" />
+      <PhoneInput id="phone" value={null} onChange={setPhone} error={phoneError} testId="welcome-phone" />
       {phone.trim() && (
         <label className="flex min-h-11 items-center gap-3 text-[15px]">
           <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="h-5 w-5 accent-primary" />

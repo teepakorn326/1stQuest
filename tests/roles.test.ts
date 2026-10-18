@@ -108,4 +108,20 @@ d("caretakers create circles and add people; sign-in codes", async () => {
     const [row] = await raw<{ birth_year: number; death_year: number; epitaph: string }[]>`select birth_year, death_year, epitaph from circles where id = ${c.id}`;
     expect(row).toEqual({ birth_year: 1941, death_year: 2026, epitaph: "Always in our book" });
   });
+
+  it("anyone with the link can join as a viewer or health professional; caretakers change roles", async () => {
+    const c = await circles.createCircle({ caretakerId, patient: { name: "J", email: mail("j"), phone: null }, mobility: "walks_alone", mobilityNotes: null });
+    made.push(c.id);
+    const p = phone(5);
+    const doc = await people.joinCircle({ circleId: c.id, name: "Dr Lin", email: mail("doc"), phone: p, role: "health" });
+    expect(doc.joined).toBe(true);
+    expect(doc.user).toMatchObject({ name: "Dr Lin", phone: p });
+    expect(await roleOf(c.id, doc.user.id)).toBe("health");
+    expect((await people.joinCircle({ circleId: c.id, name: "Dr Lin", email: mail("doc"), phone: null, role: "viewer" })).joined).toBe(false);
+    expect(await roleOf(c.id, doc.user.id)).toBe("health"); // joining again changes nothing
+    expect(await people.setRole(c.id, doc.user.id, "caretaker")).toBe(true);
+    expect(await roleOf(c.id, doc.user.id)).toBe("caretaker");
+    const [owner] = await raw<{ user_id: string }[]>`select user_id from memberships where circle_id = ${c.id} and role = 'owner'`;
+    expect(await people.setRole(c.id, owner!.user_id, "viewer")).toBe(false);
+  });
 });

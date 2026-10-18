@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Email } from "@/lib/fields";
 import { z } from "zod";
 import { readBody, route, HttpError } from "@/lib/http";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
@@ -6,7 +7,7 @@ import { requireApiUser, startSession } from "@/lib/auth/session";
 import { findUserByEmail, setPasswordHash } from "@/lib/db/queries/users";
 
 const SignIn = z.object({
-  email: z.string().trim().toLowerCase().pipe(z.email()),
+  email: Email,
   password: z.string().min(1).max(200),
 });
 

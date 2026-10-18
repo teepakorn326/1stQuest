@@ -13,14 +13,14 @@ if (!url) {
 const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
 
 const DEMO_DOMAIN = "wishcircle.demo";
-// Rose is the owner (the circle is for her); Ploy set it up and looks after it; the rest view and help.
+// Rose is the owner (the circle is for her); Ploy set it up and looks after it; family view and help; Dr Lin is a health professional.
 const people = {
   rose: { name: "Nana Rose", role: "owner" },
   ploy: { name: "Ploy", role: "caretaker" },
   tom: { name: "Tom", role: "viewer" },
   krit: { name: "Krit", role: "viewer" },
   may: { name: "Aunt May", role: "viewer" },
-  lin: { name: "Dr Lin", role: "viewer" },
+  lin: { name: "Dr Lin", role: "health" },
 } as const;
 type Key = keyof typeof people;
 

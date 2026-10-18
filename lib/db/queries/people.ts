@@ -44,6 +44,30 @@ export async function addPerson(input: PersonInput & { circleId: string; actorId
   });
 }
 
+/**
+ * Someone registers from the circle's link: their account (by email; name and mobile filled in if
+ * missing) joins as a viewer or health professional. Already a member: nothing changes.
+ */
+export async function joinCircle(input: PersonInput & { circleId: string; role: "viewer" | "health" }): Promise<{ user: UserRow; joined: boolean }> {
+  return sql.begin(async (tx) => {
+    const user = await upsertPerson(tx, input);
+    const added = await tx`
+      insert into memberships (circle_id, user_id, role) values (${input.circleId}, ${user.id}, ${input.role})
+      on conflict do nothing returning user_id`;
+    if (added.length) {
+      await insertActivity(tx, { circleId: input.circleId, actorId: user.id, type: "member_joined", refId: user.id, payload: { role: input.role } });
+    }
+    return { user, joined: added.length > 0 };
+  });
+}
+
+/** The owner or a caretaker changes someone's role (never the owner's). */
+export async function setRole(circleId: string, userId: string, role: "caretaker" | "viewer" | "health"): Promise<boolean> {
+  const rows = await sql`
+    update memberships set role = ${role} where circle_id = ${circleId} and user_id = ${userId} and role <> 'owner' returning user_id`;
+  return rows.length > 0;
+}
+
 /** Takes someone out of the circle. The owner (the person the circle is for) can't be removed. */
 export async function removePerson(circleId: string, userId: string): Promise<boolean> {
   const rows = await sql`delete from memberships where circle_id = ${circleId} and user_id = ${userId} and role <> 'owner' returning user_id`;

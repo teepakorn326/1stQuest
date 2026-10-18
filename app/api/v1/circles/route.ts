@@ -5,11 +5,12 @@ import { requireApiUser, setActiveCircle } from "@/lib/auth/session";
 import { createCircle, listMyCircles, setCirclePhoto } from "@/lib/db/queries/circles";
 import { MOBILITIES } from "@/lib/db/types";
 import { Phone, personError } from "@/lib/people";
+import { Email } from "@/lib/fields";
 import { storageConfigured, uploadObject } from "@/lib/storage";
 
 const Fields = z.object({
   patientName: z.string().trim().min(1, "Who is this circle for?").max(80),
-  patientEmail: z.string().trim().toLowerCase().pipe(z.email("Add their email, so they can sign in.")),
+  patientEmail: Email,
   patientPhone: Phone,
   mobility: z.enum(MOBILITIES as [string, ...string[]]),
   mobilityNotes: z.string().trim().max(500).optional().transform((v) => v || null),

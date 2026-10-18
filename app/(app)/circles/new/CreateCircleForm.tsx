@@ -3,7 +3,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CameraIcon } from "@/components/icons";
 import { MobilityPicker } from "@/components/MobilityPicker";
+import { EmailInput } from "@/components/EmailInput";
 import { PhoneInput } from "@/components/PhoneInput";
+import { emailProblem, phoneProblem } from "@/lib/validate";
 import { Button } from "@/components/ui/Button";
 import { FormError, Input, Label, Textarea } from "@/components/ui/Field";
 import type { Mobility } from "@/lib/db/types";
@@ -15,6 +17,7 @@ export function CreateCircleForm() {
   const [notes, setNotes] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string | null; phone?: string | null }>({});
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -30,8 +33,11 @@ export function CreateCircleForm() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
+    const errs = { email: emailProblem(email), phone: phoneProblem(phone) };
+    setFieldErrors(errs);
+    if (errs.email || errs.phone) return;
+    setBusy(true);
     const fd = new FormData();
     fd.set("patientName", name);
     fd.set("mobility", mobility);
@@ -51,7 +57,7 @@ export function CreateCircleForm() {
   }
 
   return (
-    <form onSubmit={submit} className="m-0 flex flex-1 flex-col">
+    <form onSubmit={submit} className="m-0 flex flex-1 flex-col" noValidate>
       <div className="flex flex-col gap-[22px] px-5 pt-2 pb-5">
         <p className="m-0 text-base text-ink-2">
           A circle is built around one person. You look after it as a caretaker, and add family, friends and their doctor. They get their own account, so they can sign in too.
@@ -77,11 +83,11 @@ export function CreateCircleForm() {
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="pemail">{name.trim() ? `${who}’s email` : "Their email"}</Label>
-          <Input id="pemail" type="email" inputMode="email" required placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <EmailInput id="pemail" value={email} onChange={setEmail} error={fieldErrors.email} autoComplete="off" />
           <Label htmlFor="pphone" className="mt-1">
             {name.trim() ? `${who}’s mobile number` : "Their mobile number"} <span className="font-normal text-ink-3">(optional)</span>
           </Label>
-          <PhoneInput id="pphone" value={null} onChange={setPhone} testId="patient-phone" />
+          <PhoneInput id="pphone" value={null} onChange={setPhone} error={fieldErrors.phone} testId="patient-phone" />
           <p className="m-0 text-sm text-ink-3">This makes {first === "their" ? "their" : `${first}’s`} own account. They sign in with this email or number and a code.</p>
         </div>
 

@@ -33,7 +33,7 @@ export async function setTrusted(circleId: string, userId: string | null): Promi
   const rows = userId
     ? await sql`
         update circles set trusted_user_id = ${userId} where id = ${circleId}
-          and exists (select 1 from memberships m where m.circle_id = ${circleId} and m.user_id = ${userId} and m.role = 'viewer')
+          and exists (select 1 from memberships m where m.circle_id = ${circleId} and m.user_id = ${userId} and m.role in ('viewer', 'health'))
         returning id`
     : await sql`update circles set trusted_user_id = null where id = ${circleId} returning id`;
   return rows.length > 0;
@@ -47,7 +47,7 @@ const bookTitle = (c: Ctx) => `${c.patientName}’s book`;
  * looking after it, in one transaction. Nobody else's role changes.
  */
 async function handOver(tx: Tx, c: Ctx, newCaretakerId: string): Promise<SmsRecipient[]> {
-  await tx`update memberships set role = 'caretaker' where circle_id = ${c.circleId} and user_id = ${newCaretakerId} and role = 'viewer'`;
+  await tx`update memberships set role = 'caretaker' where circle_id = ${c.circleId} and user_id = ${newCaretakerId} and role in ('viewer', 'health')`;
   await tx`update circles set mode = 'memorial', mode_changed_at = now(), trusted_user_id = null where id = ${c.circleId}`;
   await tx`
     update memorial_requests set closed_at = now(), outcome = 'switched', closed_by = ${newCaretakerId}
@@ -59,7 +59,7 @@ async function handOver(tx: Tx, c: Ctx, newCaretakerId: string): Promise<SmsReci
 export async function trustedSwitch(c: Ctx, userId: string): Promise<SmsRecipient[] | null> {
   return sql.begin(async (tx) => {
     const ok = await tx`
-      select 1 from circles ci join memberships m on m.circle_id = ci.id and m.user_id = ${userId} and m.role = 'viewer'
+      select 1 from circles ci join memberships m on m.circle_id = ci.id and m.user_id = ${userId} and m.role in ('viewer', 'health')
       where ci.id = ${c.circleId} and ci.mode = 'active' and ci.trusted_user_id = ${userId}
       for update of ci`;
     if (!ok.length) return null;
@@ -133,7 +133,7 @@ export async function applyDueRequest(c: Ctx): Promise<{ sms: SmsRecipient[] } |
   return sql.begin(async (tx) => {
     const [due] = await tx<{ id: string; requested_by: string }[]>`
       select r.id, r.requested_by from memorial_requests r
-      join memberships m on m.circle_id = r.circle_id and m.user_id = r.requested_by and m.role = 'viewer'
+      join memberships m on m.circle_id = r.circle_id and m.user_id = r.requested_by and m.role in ('viewer', 'health')
       where r.circle_id = ${c.circleId} and r.closed_at is null and r.takes_effect_at <= now()
       for update of r skip locked`;
     if (!due) return null;

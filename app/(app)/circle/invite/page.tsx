@@ -5,11 +5,11 @@ import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listMembers } from "@/lib/db/queries/memberships";
 import { appUrl } from "@/lib/env";
 import { qrSvg } from "@/lib/qr";
-import { AddPersonForm, PeopleList, SharePanel } from "./PeoplePanel";
+import { PeopleList, SharePanel } from "./PeoplePanel";
 
 export const dynamic = "force-dynamic";
 
-/** Add people (name, email, mobile), then share the circle's one link or QR code with them. */
+/** Share the circle's one link or QR code; manage who's in (make caretakers, remove people). */
 export default async function AddPeoplePage() {
   const user = await requirePageUser("/circle/invite");
   const circle = await getActiveCircle(user.id);
@@ -21,13 +21,12 @@ export default async function AddPeoplePage() {
 
   return (
     <main className="flex flex-col">
-      <PageHeader title="Add people" backHref="/circle" />
+      <PageHeader title="Invite people" backHref="/circle" />
       <div className="flex flex-col gap-6 px-5 pt-2 pb-5">
-        <AddPersonForm circleId={circle.id} />
         <SharePanel url={url} qr={qr} patientName={circle.patient_name} />
         <PeopleList
           circleId={circle.id}
-          canRemove
+          canManage
           people={members.map((m) => ({ id: m.user_id, name: m.name ?? m.email, email: m.email, phone: m.phone, role: m.role, you: m.user_id === user.id }))}
         />
       </div>

@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { EmailInput } from "@/components/EmailInput";
 import { PhoneInput } from "@/components/PhoneInput";
+import { emailProblem, phoneProblem } from "@/lib/validate";
 import { Button } from "@/components/ui/Button";
 import { DevBanner } from "@/components/ui/DevBanner";
 import { FormError, Input, Label } from "@/components/ui/Field";
@@ -28,13 +30,16 @@ export function SignInForm({ next, initialError, autoFocus }: { next: string | n
   const [step, setStep] = useState<Step>({ kind: "contact" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const contact = via === "email" ? { email } : { phone };
   const shown = via === "email" ? email : phone;
 
   async function sendCode(e?: React.FormEvent) {
     e?.preventDefault();
     setError(null);
-    if (via === "phone" && !phone) return setError("Enter your mobile number.");
+    const problem = via === "email" || usePassword ? emailProblem(email) : phoneProblem(phone, { required: true });
+    setFieldError(problem);
+    if (problem) return;
     setBusy(true);
     const res = usePassword ? await post("/api/v1/auth/password", { email, password }) : await post("/api/v1/auth/code", { ...contact, next });
     const data = await res?.json().catch(() => null);
@@ -111,7 +116,7 @@ export function SignInForm({ next, initialError, autoFocus }: { next: string | n
   }
 
   return (
-    <form onSubmit={sendCode} className="m-0 flex flex-col gap-3">
+    <form onSubmit={sendCode} className="m-0 flex flex-col gap-3" noValidate>
       <FormError message={error} />
       {!usePassword && (
         <div role="tablist" aria-label="Sign in with" className="grid grid-cols-2 gap-1 rounded-[14px] bg-tint p-1">
@@ -124,6 +129,7 @@ export function SignInForm({ next, initialError, autoFocus }: { next: string | n
               onClick={() => {
                 setVia(v);
                 setError(null);
+                setFieldError(null);
               }}
               className={clsx("h-11 rounded-[11px] text-[15px]", via === v ? "bg-surface font-bold text-ink shadow-[0_1px_2px_rgba(28,43,58,0.12)]" : "text-ink-2")}
             >
@@ -135,22 +141,12 @@ export function SignInForm({ next, initialError, autoFocus }: { next: string | n
       {via === "email" || usePassword ? (
         <>
           <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            required
-            autoFocus={autoFocus}
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <EmailInput id="email" value={email} onChange={setEmail} error={fieldError} autoFocus={autoFocus} placeholder="you@example.com" />
         </>
       ) : (
         <>
           <Label htmlFor="phone">Mobile number</Label>
-          <PhoneInput id="phone" value={null} onChange={setPhone} testId="signin-phone" />
+          <PhoneInput id="phone" value={null} onChange={setPhone} required error={fieldError} testId="signin-phone" />
         </>
       )}
       {usePassword && (
