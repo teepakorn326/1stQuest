@@ -17,6 +17,7 @@ describe("memorial handover rules", () => {
     expect(canNameTrusted(caretaker, null)).toBe(true);
     expect(canNameTrusted(caretaker, "caretaker")).toBe(false);
     expect(canNameTrusted(fam, "viewer")).toBe(false);
+    expect(canNameTrusted(caretaker, "health")).toBe(true);
   });
 
   it("the trusted viewer can switch while the book is active", () => {
@@ -31,6 +32,7 @@ describe("memorial handover rules", () => {
     expect(canAsk(fam, active, open)).toBe(false);
     expect(canAsk(caretaker, active, null)).toBe(false);
     expect(canAsk(owner, active, null)).toBe(false);
+    expect(canAsk({ userId: "h", role: "health" }, active, null)).toBe(true);
     expect(canConfirm(fam, active, open)).toBe(false);
     expect(canConfirm(fam2, active, open)).toBe(true);
     expect(canConfirm(caretaker, active, open)).toBe(false);

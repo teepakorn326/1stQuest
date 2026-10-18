@@ -31,7 +31,7 @@ async function newPhone(browser: Browser) {
   return context.newPage();
 }
 
-test("demo loop: caretaker signs in → circle → adds someone → they join by link → wish → AI plan → live claim → photos → AI card → book", async ({
+test("demo loop: caretaker signs in → circle → someone registers from the link → wish → AI plan → live claim → photos → AI card → book", async ({
   browser,
   request,
 }) => {
@@ -58,21 +58,20 @@ test("demo loop: caretaker signs in → circle → adds someone → they join by
     await owner.getByLabel("Anything else that helps with planning").fill("Best in the mornings. Tires after 20 minutes.");
     await owner.getByRole("button", { name: "Create circle" }).click();
     await owner.waitForURL("**/circle/invite");
-    await owner.getByLabel("Name").fill(JOINER.name);
-    await owner.getByLabel("Email").fill(JOINER.email);
-    await owner.getByRole("button", { name: "Add to the circle" }).click();
-    await expect(owner.getByText(`Added ${JOINER.name}`)).toBeVisible();
     await expect(owner.getByTestId("people")).toContainText(PATIENT);
     inviteUrl = await owner.getByTestId("invite-link").inputValue();
     expect(inviteUrl).toMatch(/\/join\/[\w-]+$/);
   });
 
-  await test.step("the person they added opens the link, signs in with a code, and gets in", async () => {
+  await test.step("a health professional opens the link, registers, confirms with a code, and is in", async () => {
     await joiner.goto(inviteUrl);
-    await expect(joiner.getByText(`Sign in to see ${PATIENT}’s circle`)).toBeVisible();
-    await signIn(joiner, JOINER);
-    await expect(joiner.getByRole("heading", { name: `Welcome to ${PATIENT}’s circle` })).toBeVisible();
-    await joiner.getByTestId("open-circle").click();
+    await expect(joiner.getByRole("heading", { name: `Join ${PATIENT}’s circle` })).toBeVisible();
+    await joiner.getByLabel("Your name").fill(JOINER.name);
+    await joiner.getByLabel("Email").fill(JOINER.email);
+    await joiner.getByRole("button", { name: "A health professional" }).click();
+    await joiner.getByRole("button", { name: "Email me a code" }).click();
+    await joiner.getByLabel("Code").fill((await joiner.getByTestId("dev-code").innerText()).trim());
+    await joiner.getByRole("button", { name: `Join ${PATIENT}’s circle` }).click();
     await joiner.waitForURL("**/home");
     await expect(joiner.getByText(`${PATIENT}’s circle`)).toBeVisible();
   });

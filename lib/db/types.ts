@@ -1,8 +1,12 @@
 // Hand-written row types. Keep in sync with db/migrations/*.sql.
 
 export type Mobility = "walks_alone" | "short_walks_with_help" | "wheelchair" | "mostly_resting";
-/** owner: the person the circle is for. caretaker: sets it up, posts, adds people. viewer: reads, comments, takes quests. */
-export type Role = "owner" | "caretaker" | "viewer";
+/**
+ * owner: the person the circle is for. caretaker: sets it up, posts, manages people.
+ * viewer: reads, comments, takes quests. health: a health professional, same as a viewer.
+ */
+export type Role = "owner" | "caretaker" | "viewer" | "health";
+export const ROLE_LABEL: Record<Role, string> = { owner: "Owner", caretaker: "Caretaker", viewer: "Viewer", health: "Health professional" };
 export type InviteRole = Exclude<Role, "owner">;
 export type CircleMode = "active" | "memorial";
 export type Hemisphere = "north" | "south";

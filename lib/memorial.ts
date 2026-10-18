@@ -10,11 +10,11 @@ export const MEMORIAL_HOLD_DAYS = 7;
 type Circle = { mode: CircleMode; trusted_user_id: string | null };
 export type OpenRequest = { requested_by: string; confirmed_by: string | null; takes_effect_at: Date | null };
 
-const isViewer = (v: Viewer) => v.role === "viewer";
+const isViewer = (v: Viewer) => v.role === "viewer" || v.role === "health";
 
 /** The owner or a caretaker names (or clears) the trusted person; only a viewer can be named. */
 export function canNameTrusted(viewer: Viewer, candidateRole: string | null): boolean {
-  return manages(viewer.role) && (candidateRole === null || candidateRole === "viewer");
+  return manages(viewer.role) && (candidateRole === null || candidateRole === "viewer" || candidateRole === "health");
 }
 
 /** The trusted person switches straight away (and becomes a caretaker). */

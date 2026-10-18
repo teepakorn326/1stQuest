@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { Email } from "@/lib/fields";
 import { z } from "zod";
 import { readBody, route, HttpError } from "@/lib/http";
 import { issueMagicLink } from "@/lib/auth/magicLink";
 import { emailSender } from "@/lib/email";
 
 const Body = z.object({
-  email: z.string().trim().toLowerCase().pipe(z.email("Please enter a valid email.")),
+  email: Email,
   next: z.string().nullish(),
 });
 

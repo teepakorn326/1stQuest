@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ROLE_LABEL } from "@/lib/db/types";
 import { BookIcon, PlusIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { realtimeConfig } from "@/lib/realtime";
@@ -20,8 +21,6 @@ import { countUnread } from "@/lib/db/queries/notifications";
 import { WishRow } from "@/components/WishRow";
 
 export const dynamic = "force-dynamic";
-
-const ROLE_LABEL = { owner: "Owner", caretaker: "Caretaker", viewer: "Viewer" } as const;
 
 function BadgeIcon() {
   return (

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ROLE_LABEL } from "@/lib/db/types";
 import { SignOutButton } from "@/components/SignOutButton";
 import { PlusIcon } from "@/components/icons";
 import { Avatar } from "@/components/ui/Avatar";
@@ -15,8 +16,6 @@ import { PasswordForm } from "./PasswordForm";
 import { PhoneForm } from "./PhoneForm";
 
 export const dynamic = "force-dynamic";
-
-const ROLE_LABEL = { owner: "Owner", caretaker: "Caretaker", viewer: "Viewer" } as const;
 
 export default async function CirclePage() {
   const user = await requirePageUser("/circle");
@@ -52,7 +51,7 @@ export default async function CirclePage() {
       <div className="flex flex-col gap-5 px-5 pt-2 pb-5">
         {canInvite({ userId: user.id, role: circle.role }) && (
           <ButtonLink href="/circle/invite">
-            <PlusIcon size={22} /> Add people
+            <PlusIcon size={22} /> Invite people
           </ButtonLink>
         )}
         <section className="flex flex-col gap-2.5">
@@ -87,7 +86,7 @@ export default async function CirclePage() {
           <TrustedForm
             circleId={circle.id}
             patientName={circle.patient_name}
-            people={members.filter((m) => m.role === "viewer").map((m) => ({ id: m.user_id, name: label(m) }))}
+            people={members.filter((m) => m.role === "viewer" || m.role === "health").map((m) => ({ id: m.user_id, name: label(m) }))}
             trustedUserId={circle.trusted_user_id}
             nudge={false}
           />

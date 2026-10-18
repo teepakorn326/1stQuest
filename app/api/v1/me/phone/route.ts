@@ -3,16 +3,9 @@ import { z } from "zod";
 import { conflict, readBody, route } from "@/lib/http";
 import { requireApiUser } from "@/lib/auth/session";
 import { setPhone } from "@/lib/db/queries/notifications";
+import { OptionalMobile } from "@/lib/fields";
 
-const Body = z.object({
-  phone: z
-    .string()
-    .trim()
-    .transform((v) => v.replace(/[\s().-]/g, ""))
-    .refine((v) => v === "" || /^\+[1-9]\d{7,14}$/.test(v), "That number doesn’t look right. Check the number and the country.")
-    .transform((v) => v || null),
-  optIn: z.boolean(),
-});
+const Body = z.object({ phone: OptionalMobile, optIn: z.boolean() });
 
 /** Your mobile number (you can sign in with it) and whether to get a text when something new is posted. */
 export const PUT = route(async (req) => {

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { PhoneInput } from "@/components/PhoneInput";
+import { phoneProblem } from "@/lib/validate";
 import { FormError, Label } from "@/components/ui/Field";
 
 /** Opt in to a text message whenever the owner posts. */
@@ -11,12 +12,16 @@ export function PhoneForm({ phone: initialPhone, optIn: initialOptIn }: { phone:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
     setSaved(false);
+    const problem = phoneProblem(phone);
+    setPhoneError(problem);
+    if (problem) return;
+    setBusy(true);
     const res = await fetch("/api/v1/me/phone", {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -33,7 +38,7 @@ export function PhoneForm({ phone: initialPhone, optIn: initialOptIn }: { phone:
   return (
     <form onSubmit={save} className="m-0 flex flex-col gap-2" data-testid="phone-form">
       <Label htmlFor="phone">Mobile number for texts</Label>
-      <PhoneInput id="phone" value={initialPhone} onChange={setPhone} />
+      <PhoneInput id="phone" value={initialPhone} onChange={setPhone} error={phoneError} />
       <label className="flex min-h-11 items-center gap-3 text-[15px]">
         <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="h-5 w-5 accent-primary" />
         Text me when something new is posted

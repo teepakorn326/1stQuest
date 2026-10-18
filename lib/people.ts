@@ -1,14 +1,7 @@
-import { z } from "zod";
 import { badRequest, conflict, type HttpError } from "@/lib/http";
 import { PersonError } from "@/lib/db/queries/people";
 
-/** Optional mobile number in E.164 ("+66812345678"); "" or missing → null. */
-export const Phone = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => (v ? v.replace(/[\s-]/g, "") : null))
-  .refine((v) => v === null || /^\+[1-9]\d{7,14}$/.test(v), "That number doesn’t look right. Check the number and the country.");
+export { OptionalMobile as Phone } from "@/lib/fields";
 
 /** User-facing errors for adding a person. */
 export function personError(err: unknown): HttpError | null {

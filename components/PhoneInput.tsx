@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { COUNTRIES, fromE164, guessCountry, toE164 } from "@/lib/phone";
+import { phoneProblem } from "@/lib/validate";
 
 const box = "h-[52px] rounded-[14px] border-[1.5px] border-field bg-surface text-[17px] focus:border-primary focus:outline-none";
 
@@ -13,12 +14,18 @@ export function PhoneInput({
   value,
   onChange,
   testId,
+  required = false,
+  error,
 }: {
   id: string;
   value: string | null;
   onChange: (e164: string) => void;
   testId?: string;
+  required?: boolean;
+  /** A message from the form (e.g. on submit); otherwise it checks itself when you leave the field. */
+  error?: string | null;
 }) {
+  const [touched, setTouched] = useState(false);
   const [initial] = useState(() => fromE164(value, guessCountry()));
   const [code, setCode] = useState(initial.country.code);
   const [local, setLocal] = useState(initial.local);
@@ -37,7 +44,10 @@ export function PhoneInput({
     onChange(toE164(c, nextLocal));
   }
 
+  const own = touched ? phoneProblem(toE164(country, local), { required }) : null;
+  const shown = error ?? own;
   return (
+    <div className="flex flex-col gap-1.5">
     <div className="flex gap-2">
       <label htmlFor={`${id}-country`} className="sr-only">
         Country
@@ -63,9 +73,18 @@ export function PhoneInput({
         placeholder={country.code === "TH" ? "081 234 5678" : country.code === "AU" ? "0412 345 678" : "Mobile number"}
         value={local}
         onChange={(e) => update(code, e.target.value)}
-        className={`${box} min-w-0 flex-1 px-4`}
+        onBlur={() => setTouched(true)}
+        aria-invalid={shown ? true : undefined}
+        aria-describedby={shown ? `${id}-error` : undefined}
+        className={`${box} min-w-0 flex-1 px-4 ${shown ? "border-warm-ink" : ""}`}
         data-testid={testId}
       />
+    </div>
+      {shown && (
+        <p id={`${id}-error`} className="m-0 text-sm text-warm-ink" role="alert">
+          {shown}
+        </p>
+      )}
     </div>
   );
 }
