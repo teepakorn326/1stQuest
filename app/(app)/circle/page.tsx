@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SignOutButton } from "@/components/SignOutButton";
 import { PlusIcon } from "@/components/icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
@@ -73,9 +74,13 @@ export default async function CirclePage() {
           </ul>
         </section>
 
-        {manages(circle.role) && (circle.mode === "active" || memorialUndoUntil(circle)! > new Date()) && (
+        {manages(circle.role) && (
           <Link href="/circle/memorial" className="text-[15px] font-bold no-underline" data-testid="memorial-link">
-            {circle.mode === "active" ? `Turn ${circle.patient_name}’s book into a memorial album` : "Memorial album: undo"}
+            {circle.mode === "active"
+              ? `Turn ${circle.patient_name}’s book into a memorial album`
+              : memorialUndoUntil(circle)! > new Date()
+                ? "Memorial album: the stone, or undo"
+                : `${circle.patient_name}’s stone`}
           </Link>
         )}
         {manages(circle.role) && circle.mode === "active" && (
@@ -96,11 +101,7 @@ export default async function CirclePage() {
             </p>
             <PhoneForm phone={user.phone} optIn={user.sms_opt_in} />
             <PasswordForm hasPassword={Boolean(user.password_hash)} />
-            <form action="/api/v1/auth/sign-out" method="post" className="m-0">
-              <button type="submit" className="min-h-11 text-[15px] font-bold text-primary">
-                Sign out
-              </button>
-            </form>
+            <SignOutButton className="min-h-11 text-[15px] font-bold text-primary" />
           </div>
         </section>
       </div>

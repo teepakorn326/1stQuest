@@ -9,6 +9,7 @@ d("caretakers create circles and add people; sign-in codes", async () => {
   const circles = await import("@/lib/db/queries/circles");
   const people = await import("@/lib/db/queries/people");
   const codes = await import("@/lib/auth/loginCode");
+  const tributes = await import("@/lib/db/queries/tributes");
   const raw = postgres(url!, { max: 1, prepare: false });
   const tag = randomToken(6).toLowerCase();
   const mail = (k: string) => `${k}-${tag}@example.test`;
@@ -86,5 +87,19 @@ d("caretakers create circles and add people; sign-in codes", async () => {
     const who = mail("flood");
     for (let i = 0; i < 5; i++) expect("code" in (await codes.issueLoginCode(who, null))).toBe(true);
     expect(await codes.issueLoginCode(who, null)).toEqual({ rateLimited: true });
+  });
+
+  it("candles and flowers: one of each per person a day, messages listed newest first", async () => {
+    const c = await circles.createCircle({ caretakerId, patient: { name: "Mem", email: mail("mem"), phone: null }, mobility: "walks_alone", mobilityNotes: null });
+    made.push(c.id);
+    expect(await tributes.addTribute({ circleId: c.id, userId: caretakerId, kind: "candle", message: null })).toBe(true);
+    expect(await tributes.addTribute({ circleId: c.id, userId: caretakerId, kind: "candle", message: null })).toBe(false);
+    expect(await tributes.addTribute({ circleId: c.id, userId: caretakerId, kind: "flower", message: "Thank you" })).toBe(true);
+    const t = await tributes.tributeSummary(c.id, caretakerId);
+    expect(t).toMatchObject({ candles: 1, flowers: 1, litToday: true, flowerToday: true });
+    expect(t.messages.map((m) => m.message)).toEqual(["Thank you"]);
+    await tributes.setHeadstone(c.id, { birthYear: 1941, deathYear: 2026, epitaph: "Always in our book" });
+    const [row] = await raw<{ birth_year: number; death_year: number; epitaph: string }[]>`select birth_year, death_year, epitaph from circles where id = ${c.id}`;
+    expect(row).toEqual({ birth_year: 1941, death_year: 2026, epitaph: "Always in our book" });
   });
 });

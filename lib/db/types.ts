@@ -54,6 +54,10 @@ export interface CircleRow {
   trusted_user_id: string | null;
   /** The circle's one link / QR code; it only lets in people a caretaker added. */
   join_token: string;
+  /** Headstone on the "In loving memory" home. */
+  birth_year: number | null;
+  death_year: number | null;
+  epitaph: string | null;
   created_at: Date;
 }
 

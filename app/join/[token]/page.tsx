@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SignOutButton } from "@/components/SignOutButton";
 import { BookIcon } from "@/components/icons";
 import { ButtonLink } from "@/components/ui/Button";
 import { getUser } from "@/lib/auth/session";
@@ -51,11 +52,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
             {user.phone && <span className="block font-normal text-ink-2">{user.phone}</span>}
           </p>
           <p className="m-0 text-[15px] text-ink-3">Then open this link again. If you signed in with a different email, sign out and use the one they have.</p>
-          <form action="/api/v1/auth/sign-out" method="post" className="m-0">
-            <button type="submit" className="min-h-11 text-base font-bold text-primary">
-              Sign out
-            </button>
-          </form>
+          <SignOutButton className="min-h-11 text-base font-bold text-primary" />
         </>
       )}
     </main>

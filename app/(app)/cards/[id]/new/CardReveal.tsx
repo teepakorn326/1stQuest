@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookIcon, CheckIcon, SparkleIcon } from "@/components/icons";
 import { CardFace } from "@/components/CardFace";
+import { LogoMark } from "@/components/Logo";
 import { CATEGORY_LABEL } from "@/lib/activityText";
 import type { Category } from "@/lib/db/types";
 
@@ -82,8 +83,11 @@ export function CardReveal({ card, patientName }: { card: Card; patientName: str
               <div className="reveal-card">
                 <CardFace title={title} body={body} category={card.category} coverId={card.coverId} dateLabel={card.dateLabel} />
                 <div className="reveal-face reveal-back flex items-center justify-center rounded-[20px] border-[3px] border-[#F3E2C6] bg-cta" aria-hidden>
-                  <div className="flex h-[340px] w-[200px] items-center justify-center rounded-[14px] border-2 border-accent text-primary-soft">
-                    <BookIcon size={48} />
+                  <div className="flex h-[340px] w-[200px] flex-col items-center justify-center gap-3 rounded-[14px] border-2 border-accent text-cta-ink">
+                    <span className="flex h-24 w-24 items-center justify-center rounded-full bg-surface shadow-[0_4px_14px_rgba(122,74,0,0.25)]">
+                      <LogoMark size={64} />
+                    </span>
+                    <span className="text-base font-bold tracking-wide">1stQuest</span>
                   </div>
                 </div>
               </div>

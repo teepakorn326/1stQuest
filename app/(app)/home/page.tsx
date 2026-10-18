@@ -2,10 +2,10 @@ import Link from "next/link";
 import { BookIcon, PlusIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { realtimeConfig } from "@/lib/realtime";
-import { CircleSwitcher } from "@/components/CircleSwitcher";
+import { CircleBook } from "@/components/CircleBook";
 import { Greeting } from "@/components/Greeting";
+import { InLovingMemory } from "@/components/InLovingMemory";
 import { MobilityCard } from "@/components/MobilityCard";
-import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { canEditCircle, manages } from "@/lib/authz";
 import { describeActivity, timeAgo } from "@/lib/activityText";
@@ -13,13 +13,24 @@ import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listActivity } from "@/lib/db/queries/activity";
 import { listMyCircles } from "@/lib/db/queries/circles";
 import { listVisibleWishes } from "@/lib/db/queries/wishes";
-import { listRecentCards } from "@/lib/db/queries/cards";
-import { MemorialHome } from "@/components/MemorialHome";
+import { listMembers } from "@/lib/db/queries/memberships";
+import { tributeSummary } from "@/lib/db/queries/tributes";
 import { NotificationBell } from "@/components/NotificationBell";
 import { countUnread } from "@/lib/db/queries/notifications";
 import { WishRow } from "@/components/WishRow";
 
 export const dynamic = "force-dynamic";
+
+const ROLE_LABEL = { owner: "Owner", caretaker: "Caretaker", viewer: "Viewer" } as const;
+
+function BadgeIcon() {
+  return (
+    <svg width="11" height="14" viewBox="0 0 11 14" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+      <rect x="1" y="1" width="9" height="12" rx="1.5" />
+      <rect x="3.5" y="5" width="4" height="3" rx="0.5" />
+    </svg>
+  );
+}
 
 export default async function HomePage() {
   const user = await requirePageUser("/home");
@@ -33,7 +44,7 @@ export default async function HomePage() {
         </div>
         <h1 className="m-0 text-[30px] leading-tight font-bold">Hello, {user.name}</h1>
         <p className="m-0 text-lg text-ink-2">
-          A circle is built around one person. Start one, or open the invite link someone sent you to join theirs.
+          A circle is built around one person. If you look after someone, create their circle and add the family. If a caretaker added you, open the link or QR code they sent.
         </p>
         <ButtonLink href="/circles/new">
           <PlusIcon size={22} /> Create a circle
@@ -42,38 +53,65 @@ export default async function HomePage() {
     );
   }
 
-  const photoSrc0 = circle.patient_photo_path ? `/api/v1/circles/${circle.id}/photo` : null;
+  const photoSrc = circle.patient_photo_path ? `/api/v1/circles/${circle.id}/photo` : null;
   if (circle.mode === "memorial") {
+    // The person has passed away: Home is the "In loving memory" page.
     return (
       <>
         <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
         <div className="absolute top-4 right-5 z-10">
           <NotificationBell unread={await countUnread(user.id)} />
         </div>
-        <MemorialHome name={circle.patient_name} photoSrc={photoSrc0} cards={await listRecentCards(circle.id, user.id)} canPost={manages(circle.role)} />
+        <InLovingMemory
+          circleId={circle.id}
+          name={circle.patient_name}
+          photoSrc={photoSrc}
+          birthYear={circle.birth_year}
+          deathYear={circle.death_year}
+          epitaph={circle.epitaph}
+          tributes={await tributeSummary(circle.id, user.id)}
+          canEdit={canEditCircle({ userId: user.id, role: circle.role })}
+        />
       </>
     );
   }
 
-  const unread = await countUnread(user.id);
-  const [circles, wishes, feed] = await Promise.all([
+  const [unread, circles, wishes, feed, members] = await Promise.all([
+    countUnread(user.id),
     listMyCircles(user.id),
     listVisibleWishes(circle.id, user.id, 5),
     listActivity(circle.id, user.id, { limit: 3 }),
+    listMembers(circle.id),
   ]);
-  const photoSrc = circle.patient_photo_path ? `/api/v1/circles/${circle.id}/photo` : null;
+  const owner = members.find((m) => m.role === "owner");
+  const myName = user.name ?? user.email;
+  const roleChip = circle.trusted_user_id === user.id ? "Trusted person" : ROLE_LABEL[circle.role];
 
   return (
-    <main className="flex flex-col gap-5 px-5 pt-6 pb-5">
+    <main className="flex flex-col gap-5 px-5 pt-4 pb-5">
       <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
-      <header className="flex items-center gap-3.5">
-        <Avatar name={circle.patient_name} seed="patient" size={56} src={photoSrc} tone="bg-[#FFE3B8] text-primary" />
-        <div className="flex flex-1 flex-col gap-0.5">
-          <Greeting name={user.name ?? ""} />
-          <CircleSwitcher current={circle} circles={circles.map((c) => ({ id: c.id, patient_name: c.patient_name }))} />
+      <header className="flex items-center gap-3.5 rounded-[18px] border-[1.5px] border-[#FFE0AE] bg-[#FFF7EA] px-3 py-4" data-testid="home-header">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-cta text-[28px] font-bold text-cta-ink" aria-hidden>
+          {myName.trim().charAt(0).toUpperCase()}
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+          <Greeting className="text-[15px] text-ink-3" />
+          <span className="truncate text-2xl leading-tight font-bold">{myName} (you)</span>
+          <span className="mt-1 flex items-center gap-1.5 rounded-lg border border-accent bg-primary-soft px-2.5 py-0.5 text-sm font-bold text-primary-hover" data-testid="role-chip">
+            <BadgeIcon /> {roleChip}
+          </span>
         </div>
-        <NotificationBell unread={unread} />
+        <div className="self-start">
+          <NotificationBell unread={unread} />
+        </div>
       </header>
+
+      <CircleBook
+        current={{ id: circle.id, patient_name: circle.patient_name }}
+        circles={circles.map((c) => ({ id: c.id, patient_name: c.patient_name }))}
+        ownerName={owner ? (owner.name ?? owner.email) : null}
+        photoSrc={photoSrc}
+      />
 
       <MobilityCard
         circleId={circle.id}
