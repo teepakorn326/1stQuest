@@ -91,6 +91,7 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 - `GET /api/health` runs a real `SELECT 1`.
 - Every API route checks circle membership, validates input with zod, and returns `{ error: { code, message } }` without stack traces. Logs are structured JSON with a request id.
 - Every AI call has a 20s timeout and retries with backoff, and logs model, tokens and latency. Sonnet calls use the server-side refusal fallback.
+- Load test (`docs/load-test.md`, scripts in `scripts/loadtest/`): on a preview with its own Supabase free project, 0% errors up to 400 non-stop virtual users (281 requests/s). The median stayed around 500 ms; the slowest 5% of Home and Book reached 3–7 s from 100 users. Live-update connections topped out around 285–300 at once (pages fall back to polling). AI calls were mocked and not load-tested.
 - `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 130 tests (incl. email and per-country mobile-number checks, joining from the link, role changes) (authz matrix for the three roles, sign-in codes (single use, wrong tries, rate limit), creating circles and adding people, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the first comment, voice limits, memorial undo window and handover (trusted switch, ask/confirm/7 days, owner cancel), book page order, a real PDF render, copy lint). `pnpm smoke` is the Playwright demo-loop test.
 
 ## Seeded for context
