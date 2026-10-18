@@ -171,14 +171,15 @@ export async function listCardsForExport(circleId: string, viewerId: string): Pr
     where c.circle_id = ${circleId} and (w.id is null or ${wishVisibleTo(viewerId)})`;
 }
 
-/** Turns the public share link on (keeping an existing token) or off. Author only. */
-export async function setCardShare(cardId: string, authorId: string, token: string | null): Promise<string | null | undefined> {
+/** Starts (or stops, with null) sharing a card. Only the circle's owner or a caretaker can; undefined otherwise. */
+export async function setCardShare(cardId: string, userId: string, token: string | null): Promise<string | null | undefined> {
   const [row] = await sql<{ share_token: string | null }[]>`
-    update cards
-    set share_token = case when ${token}::text is null then null else coalesce(share_token, ${token}) end,
-        shared_at = case when ${token}::text is null then null else coalesce(shared_at, now()) end
-    where id = ${cardId} and author_id = ${authorId}
-    returning share_token`;
+    update cards c
+    set share_token = case when ${token}::text is null then null else coalesce(c.share_token, ${token}) end,
+        shared_at = case when ${token}::text is null then null else coalesce(c.shared_at, now()) end
+    where c.id = ${cardId}
+      and exists (select 1 from memberships m where m.circle_id = c.circle_id and m.user_id = ${userId} and m.role in ('owner', 'caretaker'))
+    returning c.share_token`;
   return row ? row.share_token : undefined;
 }
 
