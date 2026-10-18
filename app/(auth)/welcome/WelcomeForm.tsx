@@ -58,7 +58,7 @@ export function WelcomeForm({ next }: { next: string }) {
       {phone.trim() && (
         <label className="flex min-h-11 items-center gap-3 text-[15px]">
           <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="h-5 w-5 accent-primary" />
-          Text me when the owner posts something new
+          Text me when something new is posted
         </label>
       )}
       <span className="text-sm text-ink-3">You can change this later in Circle.</span>

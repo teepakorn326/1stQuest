@@ -8,7 +8,7 @@ const url = process.env.DATABASE_URL;
 const d = url ? describe : describe.skip;
 
 describe("canSeeCard", () => {
-  const v = { userId: "u", role: "family" as const };
+  const v = { userId: "u", role: "viewer" as const };
   it("cards with no wish are for the whole circle; others follow the wish", () => {
     expect(canSeeCard(v, { wish_id: null, wish_author_id: null, wish_visibility: null })).toBe(true);
     expect(canSeeCard(v, { wish_id: "w", wish_author_id: "x", wish_visibility: "private" })).toBe(false);
@@ -42,7 +42,7 @@ d("cards and media", async () => {
     const [c2] = await raw<{ id: string }[]>`insert into circles (patient_name) values (${`Other ${tag}`}) returning id`;
     circleId = c!.id;
     otherCircle = c2!.id;
-    await raw`insert into memberships (circle_id, user_id, role) values (${circleId}, ${ids.owner}, 'owner'), (${circleId}, ${ids.tom}, 'family')`;
+    await raw`insert into memberships (circle_id, user_id, role) values (${circleId}, ${ids.owner}, 'owner'), (${circleId}, ${ids.tom}, 'viewer')`;
     await raw`insert into memberships (circle_id, user_id, role) values (${otherCircle}, ${ids.outsider}, 'owner')`;
   });
 

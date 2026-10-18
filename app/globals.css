@@ -160,3 +160,8 @@
 }
 @keyframes wc-frame-light { 0%, 100% { background-position: 0 0, 0% 0%; } 50% { background-position: 0 0, 100% 100%; } }
 @media (prefers-reduced-motion: reduce) { .gold-frame { animation: none; } }
+
+/* "In loving memory": candle flames flicker gently. */
+.memory-flame { transform-origin: 50% 100%; animation: wc-flicker 2.2s ease-in-out infinite; box-shadow: 0 0 10px 3px rgba(255, 201, 120, 0.55); }
+@keyframes wc-flicker { 0%, 100% { transform: scaleY(1) rotate(-2deg); } 30% { transform: scaleY(1.12) rotate(2deg); } 60% { transform: scaleY(0.92) rotate(-1deg); } }
+@media (prefers-reduced-motion: reduce) { .memory-flame { animation: none; } }

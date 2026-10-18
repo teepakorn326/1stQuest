@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { manages } from "@/lib/authz";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AddMomentsForm } from "@/app/(app)/wishes/[id]/moments/AddMomentsForm";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
@@ -11,7 +12,7 @@ export default async function ShareMemoryPage({ searchParams }: { searchParams: 
   const user = await requirePageUser("/memories/new");
   const circle = await getActiveCircle(user.id);
   if (!circle) redirect("/home");
-  if (circle.mode !== "memorial" || circle.role !== "owner") redirect("/home");
+  if (circle.mode !== "memorial" || !manages(circle.role)) redirect("/home");
   const raw = (await searchParams).category;
   const initialCategory = CATEGORIES.includes(raw as Category) ? (raw as Category) : null;
 

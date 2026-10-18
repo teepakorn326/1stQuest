@@ -13,7 +13,7 @@ export const GET = route(async () => {
     unread,
     latest: n && {
       id: n.id,
-      text: `${n.actor_name ?? "The owner"} ${NOTIFY_VERB[n.kind as NotifyKind] ?? "posted"}: “${n.title}”`,
+      text: `${n.actor_name ?? "A caretaker"} ${NOTIFY_VERB[n.kind as NotifyKind] ?? "posted"}: “${n.title}”`,
       circle: n.patient_name,
       url: n.url,
     },

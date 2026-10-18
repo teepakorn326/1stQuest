@@ -28,6 +28,6 @@ export const POST = route<{ id: string }>(async (req, { params }) => {
   });
   if (added === 0) throw badRequest("Those photos couldn’t be added.");
   const circle = await findCircleForMember(card.circle_id, user.id);
-  queueTexts(sms, textFor({ kind: "media", actorName: user.name ?? "The owner", patientName: circle?.patient_name ?? "the", title: card.title, path: `/cards/${card.id}` }));
+  queueTexts(sms, textFor({ kind: "media", actorName: user.name ?? "A caretaker", patientName: circle?.patient_name ?? "the", title: card.title, path: `/cards/${card.id}` }));
   return NextResponse.json({ added, levelledUp });
 });

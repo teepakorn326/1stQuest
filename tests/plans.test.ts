@@ -29,7 +29,7 @@ d("plans, quests and the feed", async () => {
     const [c] = await raw<{ id: string }[]>`insert into circles (patient_name) values (${`Plans ${tag}`}) returning id`;
     circleId = c!.id;
     await raw`insert into memberships (circle_id, user_id, role) values
-      (${circleId}, ${ids.owner}, 'owner'), (${circleId}, ${ids.tom}, 'family'), (${circleId}, ${ids.may}, 'family')`;
+      (${circleId}, ${ids.owner}, 'owner'), (${circleId}, ${ids.tom}, 'viewer'), (${circleId}, ${ids.may}, 'viewer')`;
   });
 
   afterAll(async () => {

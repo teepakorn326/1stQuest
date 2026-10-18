@@ -68,8 +68,9 @@ function TwoStep({
 export type HandoverView = {
   circleId: string;
   patientName: string;
-  ownerName: string;
-  role: "owner" | "family" | "doctor";
+  /** "Ploy" or "Ploy and Tom": the people who can switch (and cancel) themselves. */
+  managerNames: string;
+  manages: boolean;
   can: { switch: boolean; ask: boolean; confirm: boolean; cancel: boolean };
   open: { requesterName: string; confirmerName: string | null; takesEffectAt: string | null; mine: boolean } | null;
 };
@@ -84,7 +85,7 @@ export function MemorialHandover({ v }: { v: HandoverView }) {
 
   return (
     <section className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-4" data-testid="memorial-handover">
-      <h2 className="m-0 text-base font-bold">If {v.role === "owner" ? "you can’t look after the book" : `${v.ownerName} can’t look after the book`}</h2>
+      <h2 className="m-0 text-base font-bold">If {v.manages ? "you can’t look after the book" : `${v.managerNames} can’t look after the book`}</h2>
 
       {open && (
         <div className="flex flex-col gap-1 rounded-[14px] bg-[#FFF7E8] px-3.5 py-3 text-[15px] text-[#5C4310]" role="status" data-testid="memorial-request">
@@ -94,7 +95,7 @@ export function MemorialHandover({ v }: { v: HandoverView }) {
                 {name}’s book becomes a memorial album on {day(open.takesEffectAt)}.
               </b>
               <span>
-                {open.requesterName} asked and {open.confirmerName ?? "another family member"} confirmed. {v.role === "owner" ? "If you’re still here, cancel it below." : `${v.ownerName} can still cancel it until then.`}
+                {open.requesterName} asked and {open.confirmerName ?? "someone else"} confirmed. {v.manages ? "If this is a mistake, cancel it below." : `${v.managerNames} can still cancel it until then.`}
               </span>
             </>
           ) : (
@@ -102,8 +103,8 @@ export function MemorialHandover({ v }: { v: HandoverView }) {
               <b>{open.mine ? "You asked" : `${open.requesterName} asked`} to turn {name}’s book into a memorial album.</b>
               <span>
                 {can.confirm
-                  ? `If ${name} has died, confirm below. It then happens in 7 days, and ${v.ownerName} can cancel until then.`
-                  : "Another family member needs to confirm. Then it happens in 7 days unless the owner cancels."}
+                  ? `If ${name} has died, confirm below. It then happens in 7 days, and ${v.managerNames} can cancel until then.`
+                  : "Someone else in the circle needs to confirm. Then it happens in 7 days unless a caretaker cancels."}
               </span>
             </>
           )}
@@ -113,7 +114,7 @@ export function MemorialHandover({ v }: { v: HandoverView }) {
       {can.switch && (
         <>
           <p className="m-0 text-[15px] text-ink-2">
-            {v.ownerName} chose you to look after {name}’s book. If {name} has died and {v.ownerName} can’t do it, you can turn the book into a memorial album. You’ll become the circle’s owner.
+            {v.managerNames} chose you to look after {name}’s book. If {name} has died and {v.managerNames} can’t do it, you can turn the book into a memorial album. You’ll become a caretaker.
           </p>
           <TwoStep
             label="Turn into a memorial album"
@@ -130,7 +131,7 @@ export function MemorialHandover({ v }: { v: HandoverView }) {
         <TwoStep
           label="Confirm the memorial album"
           confirmLabel="Yes, confirm"
-          note={`Only confirm if ${name} has died. ${v.ownerName} will get a message and can cancel for 7 days.`}
+          note={`Only confirm if ${name} has died. ${v.managerNames} will get a message and can cancel for 7 days.`}
           onConfirm={() => run("confirm")}
           busy={busy}
           variant="primary"
@@ -141,12 +142,12 @@ export function MemorialHandover({ v }: { v: HandoverView }) {
       {can.ask && !can.switch && (
         <>
           <p className="m-0 text-[15px] text-ink-2">
-            If {name} has died and {v.ownerName} can’t turn the book into a memorial album, two family members can do it together. One asks, another confirms, and it happens 7 days later unless {v.ownerName} cancels. The one who asked becomes the circle’s owner.
+            If {name} has died and {v.managerNames} can’t turn the book into a memorial album, two people in the circle can do it together. One asks, another confirms, and it happens 7 days later unless a caretaker cancels. The one who asked becomes a caretaker.
           </p>
           <TwoStep
             label="Ask to turn it into a memorial album"
             confirmLabel="Yes, ask"
-            note={`The family and ${v.ownerName} will get a message. Another family member needs to confirm.`}
+            note={`Everyone in the circle will get a message. Someone else needs to confirm.`}
             onConfirm={() => run("ask")}
             busy={busy}
             testId="handover-ask"
@@ -155,8 +156,8 @@ export function MemorialHandover({ v }: { v: HandoverView }) {
       )}
 
       {can.cancel && (
-        <Button variant={v.role === "owner" ? "primary" : "secondary"} className="w-full" disabled={busy} onClick={() => run("cancel")} data-testid="handover-cancel">
-          {v.role === "owner" ? "Cancel, I’m still here" : "Withdraw the request"}
+        <Button variant={v.manages ? "primary" : "secondary"} className="w-full" disabled={busy} onClick={() => run("cancel")} data-testid="handover-cancel">
+          {v.manages ? "Cancel, I’m still here" : "Withdraw the request"}
         </Button>
       )}
       <FormError message={error} />
@@ -164,17 +165,17 @@ export function MemorialHandover({ v }: { v: HandoverView }) {
   );
 }
 
-/** Owner: choose the family member who can turn the book into a memorial album if you can't. */
+/** Owner or caretaker: choose the viewer who can turn the book into a memorial album if no caretaker can. */
 export function TrustedForm({
   circleId,
   patientName,
-  family,
+  people,
   trustedUserId,
   nudge,
 }: {
   circleId: string;
   patientName: string;
-  family: { id: string; name: string }[];
+  people: { id: string; name: string }[];
   trustedUserId: string | null;
   nudge: boolean;
 }) {
@@ -205,10 +206,10 @@ export function TrustedForm({
     <form onSubmit={save} className="m-0 flex flex-col gap-2 rounded-[14px] border border-line bg-surface p-4" data-testid="trusted-form">
       <Label htmlFor="trusted">Trusted person</Label>
       <p className="m-0 text-[15px] text-ink-2">
-        {nudge ? "Please choose someone. " : ""}If {patientName} dies and you can’t turn the book into a memorial album, this family member can do it straight away and look after the book.
+        {nudge ? "Please choose someone. " : ""}If {patientName} dies and no caretaker can turn the book into a memorial album, this person can do it straight away and look after the book.
       </p>
-      {family.length === 0 ? (
-        <p className="m-0 text-sm text-ink-3">Invite a family member first.</p>
+      {people.length === 0 ? (
+        <p className="m-0 text-sm text-ink-3">Add someone to the circle first.</p>
       ) : (
         <>
           <select
@@ -218,7 +219,7 @@ export function TrustedForm({
             className="h-[52px] rounded-[14px] border-[1.5px] border-field bg-surface px-3 text-base"
           >
             <option value="">No one yet</option>
-            {family.map((f) => (
+            {people.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name}
               </option>

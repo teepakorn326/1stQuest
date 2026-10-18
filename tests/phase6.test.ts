@@ -30,7 +30,7 @@ describe("memorial undo window", () => {
     const c = { mode: "memorial" as const, mode_changed_at: changed };
     expect(memorialUndoUntil(c)!.getTime()).toBe(changed.getTime() + 30 * 86_400_000);
     expect(canSwitchMode(owner, c, now)).toBe(true);
-    expect(canSwitchMode({ userId: "f", role: "family" }, c, now)).toBe(false);
+    expect(canSwitchMode({ userId: "f", role: "viewer" }, c, now)).toBe(false);
     expect(memorialUndoUntil({ mode: "active", mode_changed_at: null })).toBeNull();
   });
 });
@@ -54,7 +54,7 @@ d("level-up and recordings", async () => {
     const [c] = await raw<{ id: string }[]>`insert into circles (patient_name) values (${`L ${tag}`}) returning id`;
     circleId = c!.id;
     await raw`insert into memberships (circle_id, user_id, role) values
-      (${circleId}, ${ids.a}, 'owner'), (${circleId}, ${ids.b}, 'family'), (${circleId}, ${ids.c}, 'family')`;
+      (${circleId}, ${ids.a}, 'owner'), (${circleId}, ${ids.b}, 'viewer'), (${circleId}, ${ids.c}, 'viewer')`;
   });
 
   afterAll(async () => {

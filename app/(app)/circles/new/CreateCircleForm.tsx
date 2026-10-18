@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import clsx from "clsx";
 import { CameraIcon } from "@/components/icons";
 import { MobilityPicker } from "@/components/MobilityPicker";
+import { PhoneInput } from "@/components/PhoneInput";
 import { Button } from "@/components/ui/Button";
 import { FormError, Input, Label, Textarea } from "@/components/ui/Field";
 import type { Mobility } from "@/lib/db/types";
@@ -13,12 +13,14 @@ export function CreateCircleForm() {
   const [name, setName] = useState("");
   const [mobility, setMobility] = useState<Mobility>("short_walks_with_help");
   const [notes, setNotes] = useState("");
-  const [self, setSelf] = useState(false);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const who = name.trim() || "them";
+  const first = name.trim().split(/\s+/).pop() || "their";
 
   function pickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -34,7 +36,8 @@ export function CreateCircleForm() {
     fd.set("patientName", name);
     fd.set("mobility", mobility);
     fd.set("mobilityNotes", notes);
-    fd.set("setUpByPatient", String(self));
+    fd.set("patientEmail", email);
+    fd.set("patientPhone", phone);
     if (photo) fd.set("photo", photo);
     const res = await fetch("/api/v1/circles", { method: "POST", body: fd }).catch(() => null);
     if (!res?.ok) {
@@ -51,7 +54,7 @@ export function CreateCircleForm() {
     <form onSubmit={submit} className="m-0 flex flex-1 flex-col">
       <div className="flex flex-col gap-[22px] px-5 pt-2 pb-5">
         <p className="m-0 text-base text-ink-2">
-          A circle is built around one person. Family, friends and their doctor join to help with their wishes.
+          A circle is built around one person. You look after it as a caretaker, and add family, friends and their doctor. They get their own account, so they can sign in too.
         </p>
         <div className="flex items-end gap-3.5">
           <label
@@ -72,6 +75,16 @@ export function CreateCircleForm() {
           </div>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="pemail">{name.trim() ? `${who}’s email` : "Their email"}</Label>
+          <Input id="pemail" type="email" inputMode="email" required placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Label htmlFor="pphone" className="mt-1">
+            {name.trim() ? `${who}’s mobile number` : "Their mobile number"} <span className="font-normal text-ink-3">(optional)</span>
+          </Label>
+          <PhoneInput id="pphone" value={null} onChange={setPhone} testId="patient-phone" />
+          <p className="m-0 text-sm text-ink-3">This makes {first === "their" ? "their" : `${first}’s`} own account. They sign in with this email or number and a code.</p>
+        </div>
+
         <fieldset className="m-0 flex flex-col gap-2.5 border-0 p-0">
           <legend className="mb-2.5 p-0 text-base font-bold">Getting around today</legend>
           <MobilityPicker value={mobility} onChange={setMobility} />
@@ -89,24 +102,6 @@ export function CreateCircleForm() {
           <p className="m-0 text-sm text-ink-3">You can change this any time as things change.</p>
         </fieldset>
 
-        <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-          <legend className="mb-2.5 p-0 text-base font-bold">I am</legend>
-          {[
-            { v: true, label: `${who === "them" ? "The person" : who}, setting this up for myself` },
-            { v: false, label: `Someone setting it up for ${who}` },
-          ].map((o) => (
-            <label
-              key={String(o.v)}
-              className={clsx(
-                "flex min-h-12 items-center gap-3 rounded-[14px] border-[1.5px] bg-surface px-3.5 text-base",
-                self === o.v ? "border-primary" : "border-field",
-              )}
-            >
-              <input type="radio" name="self" checked={self === o.v} onChange={() => setSelf(o.v)} className="h-5 w-5 accent-primary" />
-              {o.label}
-            </label>
-          ))}
-        </fieldset>
         <FormError message={error} />
       </div>
       <div className="sticky bottom-[76px] border-t border-line bg-bg px-5 pt-3 pb-4">

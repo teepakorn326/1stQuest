@@ -5,7 +5,7 @@ export type UploadKind = "photo" | "voice" | "video";
 export const LIMITS: Record<UploadKind, { types: readonly string[]; maxBytes: number; maxSeconds: number | null; label: string }> = {
   photo: { types: ["image/jpeg", "image/png", "image/webp"], maxBytes: 15 * 1024 * 1024, maxSeconds: null, label: "Photos can be JPG, PNG or WebP, up to 15MB." },
   voice: {
-    types: ["audio/webm", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/x-m4a", "audio/aac"],
+    types: ["audio/wav", "audio/x-wav", "audio/webm", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/x-m4a", "audio/aac"],
     maxBytes: 20 * 1024 * 1024,
     maxSeconds: 5 * 60,
     label: "Voice notes can be up to 5 minutes.",
@@ -20,7 +20,7 @@ export const baseType = (t: string) => t.split(";")[0]!.trim().toLowerCase();
 export function extFor(type: string): string {
   const t = baseType(type);
   return (
-    { "audio/webm": "webm", "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/aac": "aac", "audio/mpeg": "mp3", "audio/ogg": "ogg", "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" } as Record<string, string>
+    { "audio/wav": "wav", "audio/x-wav": "wav", "audio/webm": "webm", "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/aac": "aac", "audio/mpeg": "mp3", "audio/ogg": "ogg", "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" } as Record<string, string>
   )[t] ?? "bin";
 }
 

@@ -6,10 +6,11 @@ import { findCircleForMember } from "@/lib/db/queries/circles";
 import { findMembership } from "@/lib/db/queries/memberships";
 import { setTrusted } from "@/lib/db/queries/memorial";
 import { canNameTrusted } from "@/lib/memorial";
+import { manages } from "@/lib/authz";
 
 const Body = z.object({ userId: z.uuid().nullable() });
 
-/** The owner names the family member who can turn the book into a memorial album if they can't. */
+/** The owner or a caretaker names the viewer who can turn the book into a memorial album if they can't. */
 export const PUT = route<{ id: string }>(async (req, { params }) => {
   const user = await requireApiUser();
   const circle = await findCircleForMember(z.uuid().parse(params.id), user.id);
@@ -18,8 +19,8 @@ export const PUT = route<{ id: string }>(async (req, { params }) => {
   const candidate = userId ? await findMembership(circle.id, userId) : null;
   if (userId && !candidate) throw badRequest("Pick someone in the circle.");
   if (!canNameTrusted({ userId: user.id, role: circle.role }, candidate?.role ?? null)) {
-    throw circle.role === "owner" ? badRequest("The trusted person has to be a family member.") : forbidden("Only the circle’s owner can choose this.");
+    throw manages(circle.role) ? badRequest("The trusted person has to be a viewer in the circle.") : forbidden("Only the owner and caretakers can choose this.");
   }
-  if (!(await setTrusted(circle.id, userId))) throw badRequest("Pick a family member in the circle.");
+  if (!(await setTrusted(circle.id, userId))) throw badRequest("Pick a viewer in the circle.");
   return NextResponse.json({ trustedUserId: userId });
 });

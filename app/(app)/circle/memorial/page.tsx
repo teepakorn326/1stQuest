@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { canSwitchMode, memorialUndoUntil } from "@/lib/authz";
+import { canSwitchMode, memorialUndoUntil, manages } from "@/lib/authz";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { MemorialSwitch } from "./MemorialSwitch";
+import { HeadstoneForm } from "./HeadstoneForm";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export default async function MemorialPage() {
   const user = await requirePageUser("/circle/memorial");
   const circle = await getActiveCircle(user.id);
   if (!circle) redirect("/home");
-  if (circle.role !== "owner") redirect("/circle");
+  if (!manages(circle.role)) redirect("/circle");
   const until = memorialUndoUntil(circle);
   const canSwitch = canSwitchMode({ userId: user.id, role: circle.role }, circle);
   const name = circle.patient_name;
@@ -24,7 +25,7 @@ export default async function MemorialPage() {
             <h2 className="m-0 text-xl leading-snug font-bold">Turn {name}’s book into a memorial album?</h2>
             <p className="m-0 text-base text-ink-2">Take your time. Nothing is deleted, and you can undo this for 30 days.</p>
             <ul className="m-0 flex list-disc flex-col gap-2 rounded-2xl border border-line bg-surface p-4 pl-8 text-[15px] text-ink-2">
-              <li>Home becomes “Remembering {name}”, with the newest cards.</li>
+              <li>Home becomes “In loving memory”: a stone with {name}’s name, where everyone can light a candle or leave a flower and a few words.</li>
               <li>Everyone can share a memory: photos, a voice note or a few words become a card in the book.</li>
               <li>Adding wishes and “Talk it through” are put away. Existing wishes, cards and messages stay.</li>
               <li>The menu becomes Home, Book and Family.</li>
@@ -42,6 +43,9 @@ export default async function MemorialPage() {
           </>
         ) : (
           <p className="m-0 text-base text-ink-2">{name}’s book is a memorial album.</p>
+        )}
+        {circle.mode === "memorial" && (
+          <HeadstoneForm circleId={circle.id} name={name} initial={{ birthYear: circle.birth_year, deathYear: circle.death_year, epitaph: circle.epitaph }} />
         )}
       </div>
     </main>

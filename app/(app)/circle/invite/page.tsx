@@ -3,54 +3,33 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { canInvite } from "@/lib/authz";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listMembers } from "@/lib/db/queries/memberships";
-import { inviteUrl } from "@/lib/invites";
+import { appUrl } from "@/lib/env";
 import { qrSvg } from "@/lib/qr";
-import { Avatar } from "@/components/ui/Avatar";
-import { InvitePanel } from "./InvitePanel";
+import { AddPersonForm, PeopleList, SharePanel } from "./PeoplePanel";
 
 export const dynamic = "force-dynamic";
 
-const ROLE_LABEL = { owner: "Owner", family: "Family", doctor: "Care team" } as const;
-
-export default async function InvitePage() {
+/** Add people (name, email, mobile), then share the circle's one link or QR code with them. */
+export default async function AddPeoplePage() {
   const user = await requirePageUser("/circle/invite");
   const circle = await getActiveCircle(user.id);
   if (!circle) redirect("/home");
   if (!canInvite({ userId: user.id, role: circle.role })) redirect("/circle");
 
-  const [familyUrl, doctorUrl, members] = await Promise.all([
-    inviteUrl(circle.id, "family", user.id),
-    inviteUrl(circle.id, "doctor", user.id),
-    listMembers(circle.id),
-  ]);
-  const [familyQr, doctorQr] = await Promise.all([qrSvg(familyUrl), qrSvg(doctorUrl)]);
+  const url = `${appUrl()}/join/${circle.join_token}`;
+  const [members, qr] = await Promise.all([listMembers(circle.id), qrSvg(url)]);
 
   return (
     <main className="flex flex-col">
-      <PageHeader title="Invite people" backHref="/circle" />
-      <div className="flex flex-col gap-5 px-5 pt-2 pb-5">
-        <InvitePanel
-          patientName={circle.patient_name}
-          options={{
-            family: { url: familyUrl, qr: familyQr },
-            doctor: { url: doctorUrl, qr: doctorQr },
-          }}
+      <PageHeader title="Add people" backHref="/circle" />
+      <div className="flex flex-col gap-6 px-5 pt-2 pb-5">
+        <AddPersonForm circleId={circle.id} />
+        <SharePanel url={url} qr={qr} patientName={circle.patient_name} />
+        <PeopleList
+          circleId={circle.id}
+          canRemove
+          people={members.map((m) => ({ id: m.user_id, name: m.name ?? m.email, email: m.email, phone: m.phone, role: m.role, you: m.user_id === user.id }))}
         />
-        <section className="flex flex-col gap-2.5">
-          <h2 className="m-0 text-base font-bold">In the circle</h2>
-          <ul className="m-0 flex list-none flex-col rounded-[14px] border border-line bg-surface p-0">
-            {members.map((m, i) => (
-              <li key={m.user_id} className={`flex items-center gap-3 px-3.5 py-3 ${i < members.length - 1 ? "border-b border-[#F6EBDA]" : ""}`}>
-                <Avatar name={m.name ?? m.email} seed={m.user_id} />
-                <span className="flex-1 text-base">
-                  {m.name ?? m.email}
-                  {m.user_id === user.id && " (you)"}
-                </span>
-                <span className="text-sm text-ink-3">{ROLE_LABEL[m.role]}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
       </div>
     </main>
   );

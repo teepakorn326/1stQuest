@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { BookIcon, SparkleIcon } from "@/components/icons";
+import { SparkleIcon } from "@/components/icons";
+import { LogoMark } from "@/components/Logo";
 
 export const GOLD_EVENT = "1stquest:card-gold";
 
@@ -55,7 +56,9 @@ function CardBack({ gold }: { gold: boolean }) {
     >
       <div className="flex h-full w-full flex-col items-center justify-center gap-3 rounded-[14px] border-2 border-[#FFE3B8] text-cta-ink">
         <SparkleIcon size={22} className="text-[#FFF1DA]" />
-        <BookIcon size={56} />
+        <span className="flex h-28 w-28 items-center justify-center rounded-full bg-surface shadow-[0_4px_14px_rgba(122,74,0,0.25)]" data-testid="card-back-logo">
+          <LogoMark size={76} />
+        </span>
         <span className="text-lg font-bold tracking-wide">1stQuest</span>
         <SparkleIcon size={22} className="text-[#FFF1DA]" />
       </div>

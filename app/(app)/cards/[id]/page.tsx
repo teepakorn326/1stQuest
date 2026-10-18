@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft, SparkleIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { Avatar } from "@/components/ui/Avatar";
-import { canSeeCard } from "@/lib/authz";
+import { canSeeCard, manages } from "@/lib/authz";
 import { requirePageUser } from "@/lib/auth/session";
 import { findCardForMember } from "@/lib/db/queries/cards";
 import { findCircleForMember } from "@/lib/db/queries/circles";
@@ -116,12 +116,12 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
             cardId={card.id}
             circleId={card.circle_id}
             messageCount={card.messages.length}
-            canPost={card.viewer_role === "owner"}
+            canPost={manages(card.viewer_role)}
             storage={realtimeConfig()}
           />
         </GoldCardFrame>
 
-        {card.viewer_role === "owner" && card.author_id === user.id && (
+        {manages(card.viewer_role) && card.author_id === user.id && (
           <ShareCard cardId={card.id} title={card.title} initialUrl={card.share_token ? `${appUrl()}/s/${card.share_token}` : null} />
         )}
         <section className="flex flex-col gap-2" data-testid="messages">

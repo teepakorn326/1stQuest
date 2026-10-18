@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
+import { SignOutButton } from "@/components/SignOutButton";
 import { PlusIcon } from "@/components/icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import Link from "next/link";
-import { canInvite, memorialUndoUntil } from "@/lib/authz";
+import { canInvite, manages, memorialUndoUntil } from "@/lib/authz";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listMembers } from "@/lib/db/queries/memberships";
 import { findOpenRequest } from "@/lib/db/queries/memorial";
@@ -15,7 +16,7 @@ import { PhoneForm } from "./PhoneForm";
 
 export const dynamic = "force-dynamic";
 
-const ROLE_LABEL = { owner: "Owner", family: "Family", doctor: "Care team" } as const;
+const ROLE_LABEL = { owner: "Owner", caretaker: "Caretaker", viewer: "Viewer" } as const;
 
 export default async function CirclePage() {
   const user = await requirePageUser("/circle");
@@ -23,13 +24,13 @@ export default async function CirclePage() {
   if (!circle) redirect("/home");
   const [members, open] = await Promise.all([listMembers(circle.id), circle.mode === "active" ? findOpenRequest(circle.id) : null]);
   const viewer = { userId: user.id, role: circle.role };
-  const owner = members.find((m) => m.role === "owner");
   const label = (m: { name: string | null; email: string }) => m.name ?? m.email;
+  const caretakers = members.filter((m) => m.role === "caretaker").map(label);
   const handover: HandoverView = {
     circleId: circle.id,
     patientName: circle.patient_name,
-    ownerName: owner ? label(owner) : "the owner",
-    role: circle.role,
+    managerNames: caretakers.length ? caretakers.join(" and ") : "the caretakers",
+    manages: manages(circle.role),
     can: {
       switch: canTrustedSwitch(viewer, circle),
       ask: canAsk(viewer, circle, open),
@@ -51,7 +52,7 @@ export default async function CirclePage() {
       <div className="flex flex-col gap-5 px-5 pt-2 pb-5">
         {canInvite({ userId: user.id, role: circle.role }) && (
           <ButtonLink href="/circle/invite">
-            <PlusIcon size={22} /> Invite people
+            <PlusIcon size={22} /> Add people
           </ButtonLink>
         )}
         <section className="flex flex-col gap-2.5">
@@ -73,18 +74,22 @@ export default async function CirclePage() {
           </ul>
         </section>
 
-        {circle.role === "owner" && (circle.mode === "active" || memorialUndoUntil(circle)! > new Date()) && (
+        {manages(circle.role) && (
           <Link href="/circle/memorial" className="text-[15px] font-bold no-underline" data-testid="memorial-link">
-            {circle.mode === "active" ? `Turn ${circle.patient_name}’s book into a memorial album` : "Memorial album: undo"}
+            {circle.mode === "active"
+              ? `Turn ${circle.patient_name}’s book into a memorial album`
+              : memorialUndoUntil(circle)! > new Date()
+                ? "Memorial album: the stone, or undo"
+                : `${circle.patient_name}’s stone`}
           </Link>
         )}
-        {circle.role === "owner" && circle.mode === "active" && (
+        {manages(circle.role) && circle.mode === "active" && (
           <TrustedForm
             circleId={circle.id}
             patientName={circle.patient_name}
-            family={members.filter((m) => m.role === "family").map((m) => ({ id: m.user_id, name: label(m) }))}
+            people={members.filter((m) => m.role === "viewer").map((m) => ({ id: m.user_id, name: label(m) }))}
             trustedUserId={circle.trusted_user_id}
-            nudge={circle.set_up_by_patient && !circle.trusted_user_id}
+            nudge={false}
           />
         )}
         {showHandover && <MemorialHandover v={handover} />}
@@ -96,11 +101,7 @@ export default async function CirclePage() {
             </p>
             <PhoneForm phone={user.phone} optIn={user.sms_opt_in} />
             <PasswordForm hasPassword={Boolean(user.password_hash)} />
-            <form action="/api/v1/auth/sign-out" method="post" className="m-0">
-              <button type="submit" className="min-h-11 text-[15px] font-bold text-primary">
-                Sign out
-              </button>
-            </form>
+            <SignOutButton className="min-h-11 text-[15px] font-bold text-primary" />
           </div>
         </section>
       </div>

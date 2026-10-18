@@ -31,7 +31,7 @@ export const POST = route<{ id: string }>(async (_req, { params, log }) => {
       existingQuests: (current?.quests ?? []).map((q) => ({ title: q.title, status: q.status })),
     });
     const plan = await savePlan({ wish, actorId: user.id, mobility: circle.mobility, output });
-    queueTexts(plan.sms, textFor({ kind: "plan", actorName: user.name ?? "The owner", patientName: circle.patient_name, title: wish.text, path: `/wishes/${wish.id}` }));
+    queueTexts(plan.sms, textFor({ kind: "plan", actorName: user.name ?? "A caretaker", patientName: circle.patient_name, title: wish.text, path: `/wishes/${wish.id}` }));
     return NextResponse.json({ plan: { id: plan.id } }, { status: 201 });
   } catch (err) {
     if (err instanceof AiError) {

@@ -1,6 +1,6 @@
 // Quest state machine. Pure: callers load rows, this decides; the DB update is conditional on
 // the status we decided from, so two people tapping "I'll take this" at once can't both win.
-import { canClaimQuest, type Viewer } from "@/lib/authz";
+import { canClaimQuest, manages, type Viewer } from "@/lib/authz";
 import type { QuestStatus, Visibility } from "@/lib/db/types";
 
 export type QuestAction = "claim" | "release" | "done";
@@ -21,7 +21,7 @@ export function questTransition(
 ): Transition {
   if (quest.status === "locked") return { ok: false, reason: "locked" };
   const mine = quest.claimed_by_user_id === viewer.userId;
-  const owner = viewer.role === "owner";
+  const owner = manages(viewer.role);
 
   switch (action) {
     case "claim":

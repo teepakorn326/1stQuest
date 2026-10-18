@@ -28,8 +28,10 @@ export async function endSession(): Promise<void> {
   const jar = await cookies();
   const id = await unsign(jar.get(SESSION_COOKIE)?.value, env().SESSION_SECRET);
   if (id) await deleteSession(id);
-  jar.delete(SESSION_COOKIE);
-  jar.delete(CIRCLE_COOKIE);
+  // Clear with the same attributes the cookies were set with, so every browser drops them.
+  const gone = { path: "/", expires: new Date(0), httpOnly: true, secure, sameSite: "lax" as const };
+  jar.set(SESSION_COOKIE, "", gone);
+  jar.set(CIRCLE_COOKIE, "", gone);
 }
 
 /** Current user (DB-checked), memoised per request. */

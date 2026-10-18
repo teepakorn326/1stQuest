@@ -1,7 +1,8 @@
 // Hand-written row types. Keep in sync with db/migrations/*.sql.
 
 export type Mobility = "walks_alone" | "short_walks_with_help" | "wheelchair" | "mostly_resting";
-export type Role = "owner" | "family" | "doctor";
+/** owner: the person the circle is for. caretaker: sets it up, posts, adds people. viewer: reads, comments, takes quests. */
+export type Role = "owner" | "caretaker" | "viewer";
 export type InviteRole = Exclude<Role, "owner">;
 export type CircleMode = "active" | "memorial";
 export type Hemisphere = "north" | "south";
@@ -51,6 +52,12 @@ export interface CircleRow {
   mode_changed_at: Date | null;
   /** Family member the owner named to switch the book to a memorial album if they can't. */
   trusted_user_id: string | null;
+  /** The circle's one link / QR code; it only lets in people a caretaker added. */
+  join_token: string;
+  /** Headstone on the "In loving memory" home. */
+  birth_year: number | null;
+  death_year: number | null;
+  epitaph: string | null;
   created_at: Date;
 }
 

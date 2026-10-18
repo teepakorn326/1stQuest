@@ -36,10 +36,10 @@ export function PhoneForm({ phone: initialPhone, optIn: initialOptIn }: { phone:
       <PhoneInput id="phone" value={initialPhone} onChange={setPhone} />
       <label className="flex min-h-11 items-center gap-3 text-[15px]">
         <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="h-5 w-5 accent-primary" />
-        Text me when the owner posts something new
+        Text me when something new is posted
       </label>
       <FormError message={error} />
-      {saved && <p className="m-0 text-sm text-primary" role="status">{optIn ? "Saved. You’ll get a text when the owner posts." : "Saved. No texts."}</p>}
+      {saved && <p className="m-0 text-sm text-primary" role="status">{optIn ? "Saved. You’ll get a text when something new is posted." : "Saved. No texts."}</p>}
       <Button type="submit" variant="secondary" disabled={busy} className="w-full">
         {busy ? "Saving…" : "Save"}
       </Button>

@@ -32,7 +32,7 @@ d("notifications when the owner posts", async () => {
     }
     circleId = (await raw<{ id: string }[]>`insert into circles (patient_name) values (${`N ${tag}`}) returning id`)[0]!.id;
     await raw`insert into memberships (circle_id, user_id, role) values
-      (${circleId}, ${ids.owner}, 'owner'), (${circleId}, ${ids.texter}, 'family'), (${circleId}, ${ids.quiet}, 'family')`;
+      (${circleId}, ${ids.owner}, 'owner'), (${circleId}, ${ids.texter}, 'viewer'), (${circleId}, ${ids.quiet}, 'viewer')`;
     await q.setPhone(ids.texter, "+61400000001", true);
     await q.setPhone(ids.quiet, "+61400000002", false); // has a number but didn't opt in
   });

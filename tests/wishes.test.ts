@@ -26,7 +26,7 @@ d("wishes", async () => {
     const [c2] = await raw<{ id: string }[]>`insert into circles (patient_name) values (${`Other ${tag}`}) returning id`;
     circleId = c!.id;
     otherCircleId = c2!.id;
-    const roles: [keyof typeof ids, Role][] = [["author", "owner"], ["family", "family"], ["doctor", "doctor"], ["chosen", "family"]];
+    const roles: [keyof typeof ids, Role][] = [["author", "owner"], ["family", "viewer"], ["doctor", "caretaker"], ["chosen", "viewer"]];
     for (const [k, role] of roles) await raw`insert into memberships (circle_id, user_id, role) values (${circleId}, ${ids[k]}, ${role})`;
     await raw`insert into memberships (circle_id, user_id, role) values (${otherCircleId}, ${ids.outsider}, 'owner')`;
   });
@@ -42,7 +42,7 @@ d("wishes", async () => {
 
   it("list visibility matches canSeeWish for every role", async () => {
     const wishes = [await make("circle"), await make("chosen", [ids.chosen, ids.outsider]), await make("private")];
-    const roleOf: Record<string, Role> = { author: "owner", family: "family", doctor: "doctor", chosen: "family" };
+    const roleOf: Record<string, Role> = { author: "owner", family: "viewer", doctor: "caretaker", chosen: "viewer" };
     for (const who of ["author", "family", "doctor", "chosen"] as const) {
       const listed = new Set((await q.listVisibleWishes(circleId, ids[who], 100)).map((w) => w.id));
       for (const w of wishes) {

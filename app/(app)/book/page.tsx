@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { manages } from "@/lib/authz";
 import { redirect } from "next/navigation";
 import clsx from "clsx";
 import { CategoryIcon, ExportIcon, PlusIcon } from "@/components/icons";
@@ -270,11 +271,11 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         </p>
       )}
       {view === "collection" ? (
-        <Collection cards={all} wishes={wishes} category={category} memorial={memorial} canPost={circle.role === "owner"} />
+        <Collection cards={all} wishes={wishes} category={category} memorial={memorial} canPost={manages(circle.role)} />
       ) : (
         <Timeline cards={cards} hemisphere={circle.hemisphere} />
       )}
-      {view === "timeline" && circle.role === "owner" && (
+      {view === "timeline" && manages(circle.role) && (
       <Link
         href={circle.mode === "memorial" ? "/memories/new" : "/wishes/new"}
         className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-[#E8CFA6] text-[15px] font-bold no-underline"

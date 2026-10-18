@@ -38,12 +38,12 @@ export async function notifyCircle(
 
 /**
  * Notifies chosen members of a circle (all but the actor, optionally only some roles or users).
- * Returns the phone numbers to text: opted-in members, plus `alwaysText` (the owner, for a
- * memorial request they may need to cancel) whenever they have a number.
+ * Returns the phone numbers to text: opted-in members, plus `alwaysText` (the owner and caretakers,
+ * for a memorial request they may need to cancel) whenever they have a number.
  */
 export async function notifyMembers(
   tx: Tx,
-  n: { circleId: string; actorId: string; kind: NotifyKind; title: string; url: string; roles?: Role[]; userIds?: string[]; alwaysText?: string | null },
+  n: { circleId: string; actorId: string; kind: NotifyKind; title: string; url: string; roles?: Role[]; userIds?: string[]; alwaysText?: string[] },
 ): Promise<SmsRecipient[]> {
   const rows = await tx<{ user_id: string; phone: string | null; sms_opt_in: boolean }[]>`
     with recipients as (
@@ -58,7 +58,7 @@ export async function notifyMembers(
       returning user_id
     )
     select u.id as user_id, u.phone, u.sms_opt_in from inserted i join users u on u.id = i.user_id`;
-  return rows.filter((r) => r.phone && (r.sms_opt_in || r.user_id === n.alwaysText)).map((r) => ({ user_id: r.user_id, phone: r.phone! }));
+  return rows.filter((r) => r.phone && (r.sms_opt_in || n.alwaysText?.includes(r.user_id))).map((r) => ({ user_id: r.user_id, phone: r.phone! }));
 }
 
 export type NotificationItem = NotificationRow & { actor_name: string | null; patient_name: string };

@@ -6,8 +6,8 @@ import { canPost } from "@/lib/authz";
 describe("canPost", () => {
   it("only the owner posts", () => {
     expect(canPost({ userId: "o", role: "owner" })).toBe(true);
-    expect(canPost({ userId: "f", role: "family" })).toBe(false);
-    expect(canPost({ userId: "d", role: "doctor" })).toBe(false);
+    expect(canPost({ userId: "f", role: "viewer" })).toBe(false);
+    expect(canPost({ userId: "d", role: "viewer" })).toBe(false);
     expect(canPost({ userId: "x", role: null })).toBe(false);
   });
 });

@@ -8,14 +8,17 @@ const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, "");
 const OWNER = { email: "smoke-owner@wishcircle.test", name: "Smoke Owner" };
 const JOINER = { email: "smoke-joiner@wishcircle.test", name: "Smoke Joiner" };
 const PATIENT = `Smoke ${stamp}`;
+const PATIENT_EMAIL = `smoke-patient-${stamp}@wishcircle.test`;
 const fixture = (f: string) => path.join(__dirname, "fixtures", f);
 
-/** Email → on-screen dev link → (first time) name → wherever `next` pointed. */
+/** Email → on-screen dev code → (first time) name → wherever `next` pointed. */
 async function signIn(page: Page, who: { email: string; name: string }) {
   await page.getByLabel("Email").fill(who.email);
-  await page.getByRole("button", { name: "Send me a sign-in link" }).click();
-  await page.getByTestId("dev-link").click();
-  await page.waitForURL((u) => !u.pathname.startsWith("/verify") && !u.pathname.startsWith("/sign-in"));
+  await page.getByRole("button", { name: "Send me a code" }).click();
+  const code = (await page.getByTestId("dev-code").innerText()).trim();
+  await page.getByLabel("Code").fill(code);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith("/sign-in"));
   if (new URL(page.url()).pathname === "/welcome") {
     await page.getByLabel("Your name").fill(who.name);
     await page.getByRole("button", { name: "Continue" }).click();
@@ -28,7 +31,7 @@ async function newPhone(browser: Browser) {
   return context.newPage();
 }
 
-test("demo loop: sign in → circle → join by invite → wish → AI plan → live claim → photos → AI card → book", async ({
+test("demo loop: caretaker signs in → circle → adds someone → they join by link → wish → AI plan → live claim → photos → AI card → book", async ({
   browser,
   request,
 }) => {
@@ -45,25 +48,31 @@ test("demo loop: sign in → circle → join by invite → wish → AI plan → 
   let inviteUrl = "";
   let wishUrl = "";
 
-  await test.step("owner signs in and creates a circle", async () => {
+  await test.step("caretaker signs in and creates a circle (the person gets an owner account)", async () => {
     await owner.goto("/sign-in");
     await signIn(owner, OWNER);
     await owner.goto("/circles/new");
     await owner.getByLabel("Who is this circle for?").fill(PATIENT);
+    await owner.getByLabel(`${PATIENT}’s email`).fill(PATIENT_EMAIL);
     await owner.getByRole("radio", { name: "Uses a wheelchair" }).click();
     await owner.getByLabel("Anything else that helps with planning").fill("Best in the mornings. Tires after 20 minutes.");
     await owner.getByRole("button", { name: "Create circle" }).click();
     await owner.waitForURL("**/circle/invite");
+    await owner.getByLabel("Name").fill(JOINER.name);
+    await owner.getByLabel("Email").fill(JOINER.email);
+    await owner.getByRole("button", { name: "Add to the circle" }).click();
+    await expect(owner.getByText(`Added ${JOINER.name}`)).toBeVisible();
+    await expect(owner.getByTestId("people")).toContainText(PATIENT);
     inviteUrl = await owner.getByTestId("invite-link").inputValue();
     expect(inviteUrl).toMatch(/\/join\/[\w-]+$/);
   });
 
-  await test.step("second person joins from the invite link", async () => {
+  await test.step("the person they added opens the link, signs in with a code, and gets in", async () => {
     await joiner.goto(inviteUrl);
-    await expect(joiner.getByText(`invited to ${PATIENT}’s circle`)).toBeVisible();
+    await expect(joiner.getByText(`Sign in to see ${PATIENT}’s circle`)).toBeVisible();
     await signIn(joiner, JOINER);
-    await expect(joiner.getByRole("heading", { name: new RegExp(`(Join|already in) ${PATIENT}’s circle`) })).toBeVisible();
-    await joiner.getByRole("button", { name: /Join the circle|Open/ }).click();
+    await expect(joiner.getByRole("heading", { name: `Welcome to ${PATIENT}’s circle` })).toBeVisible();
+    await joiner.getByTestId("open-circle").click();
     await joiner.waitForURL("**/home");
     await expect(joiner.getByText(`${PATIENT}’s circle`)).toBeVisible();
   });
