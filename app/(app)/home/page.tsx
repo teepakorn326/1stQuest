@@ -52,7 +52,8 @@ export default async function HomePage() {
     );
   }
 
-  const photoSrc = circle.patient_photo_path ? `/api/v1/circles/${circle.id}/photo` : null;
+  // The path changes with each new photo, so the version stops browsers showing a cached old one.
+  const photoSrc = circle.patient_photo_path ? `/api/v1/circles/${circle.id}/photo?v=${encodeURIComponent(circle.patient_photo_path)}` : null;
   if (circle.mode === "memorial") {
     // The person has passed away: Home is the "In loving memory" page.
     return (
