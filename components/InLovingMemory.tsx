@@ -3,6 +3,8 @@ import clsx from "clsx";
 import { HeartIcon } from "@/components/icons";
 import type { TributeSummary } from "@/lib/db/queries/tributes";
 import { TributeActions } from "@/components/TributeActions";
+import { MemoryMusic } from "@/components/MemoryMusic";
+import { PortraitButton } from "@/components/PortraitButton";
 
 /** A little pixel flower, as in the design. */
 function Flower({ color, className }: { color: string; className?: string }) {
@@ -58,23 +60,28 @@ export function InLovingMemory({
   const candles = Math.min(3, Math.max(1, tributes.candles));
   return (
     <main className="flex flex-col pb-5" data-testid="in-loving-memory">
-      <section className="relative h-[430px] overflow-hidden bg-[#FFF4E2]" aria-label={`In loving memory of ${name}`}>
+      <section className="relative h-[490px] overflow-hidden bg-[#FFF4E2]" aria-label={`In loving memory of ${name}`}>
         <p className="absolute inset-x-0 top-9 m-0 text-center text-[15px] font-bold text-primary">In loving memory</p>
-        <span aria-hidden className="absolute top-[62px] left-[calc(50%+71px)] h-[68px] w-[68px] rounded-full bg-[#FFE0AE]">
+        <div className="absolute top-4 left-4 z-10">
+          <MemoryMusic />
+        </div>
+        <span aria-hidden className="absolute top-[56px] left-[calc(50%+76px)] h-[68px] w-[68px] rounded-full bg-[#FFE0AE]">
           <span className="absolute inset-3 rounded-full bg-accent" />
         </span>
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-[54px] bg-[#E9F0DC]" />
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-7 bg-[#D6E4C2]" />
 
-        <div className="absolute bottom-[30px] left-1/2 flex h-[300px] w-[180px] -translate-x-1/2 flex-col items-center rounded-t-[28px] border-2 border-[#D9CBB4] bg-[#EFE6D8] px-3 pt-3">
-          <div className="flex h-full w-full flex-col items-center rounded-t-[20px] border-[1.5px] border-b-0 border-[#E3D6C1] px-2 pt-8 text-center">
+        <div className="absolute bottom-[30px] left-1/2 flex h-[362px] w-[190px] -translate-x-1/2 flex-col items-center rounded-t-[28px] border-2 border-[#D9CBB4] bg-[#EFE6D8] px-3 pt-3">
+          <div className="flex h-full w-full flex-col items-center rounded-t-[20px] border-[1.5px] border-b-0 border-[#E3D6C1] px-2 pt-4 text-center">
             {photoSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoSrc} alt="" className="h-12 w-12 rounded-full border-2 border-[#E3D6C1] object-cover grayscale-[30%]" />
+              <span className="rounded-[50%] border-[3px] border-[#D9CBB4] bg-[#F7F0E4] p-[3px] shadow-[inset_0_0_0_1px_#E3D6C1]" data-testid="stone-portrait">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photoSrc} alt={`${name}`} className="block h-[92px] w-[74px] rounded-[50%] object-cover sepia-[25%]" />
+              </span>
             ) : (
-              <HeartIcon size={16} className="text-[#B8A58C]" />
+              <HeartIcon size={16} className="mt-6 text-[#B8A58C]" />
             )}
-            <h1 className="m-0 mt-4 text-[26px] leading-tight font-bold text-[#4A3926]">{name}</h1>
+            <h1 className={clsx("m-0 text-[26px] leading-tight font-bold text-[#4A3926]", photoSrc ? "mt-2.5" : "mt-4")}>{name}</h1>
             {years && <p className="m-0 mt-1.5 text-base text-ink-3">{years}</p>}
             <span aria-hidden className="mt-4 h-px w-[70px] bg-[#D9CBB4]" />
             <p className="m-0 mt-3 text-sm leading-snug text-ink-2">{epitaph ?? "Loved by family, always in our book"}</p>
@@ -91,6 +98,7 @@ export function InLovingMemory({
       </section>
 
       <div className="flex flex-col gap-3 px-5 pt-5">
+        {canEdit && <PortraitButton circleId={circleId} name={name} hasPhoto={Boolean(photoSrc)} />}
         {canEdit && !years && !epitaph && (
           <Link href="/circle/memorial" className="text-[15px] font-bold no-underline" data-testid="headstone-link">
             Add {name}’s years and a few words to the stone
