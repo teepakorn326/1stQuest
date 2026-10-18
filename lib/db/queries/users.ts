@@ -12,6 +12,11 @@ export async function findUserByEmail(email: string): Promise<UserRow | null> {
   return row ?? null;
 }
 
+export async function findUserByPhone(phone: string): Promise<UserRow | null> {
+  const [row] = await sql<UserRow[]>`select * from users where phone = ${phone}`;
+  return row ?? null;
+}
+
 /** Returns the existing user for this email or creates one. */
 export async function upsertUserByEmail(email: string): Promise<UserRow> {
   const [row] = await sql<UserRow[]>`

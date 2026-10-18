@@ -6,19 +6,20 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 
 **Before you judge:**
 - **Text messages are in dev mode.** ClickSend isn’t configured yet, so texts are prepared and logged, not sent. Setting `CLICKSEND_USERNAME` and `CLICKSEND_API_KEY` (and optionally `CLICKSEND_FROM`) turns them on with no code change.
-- **Sign-in is in dev mode.** No verified email sender is set up yet, so the sign-in link is shown on screen instead of emailed. This also means anyone can sign in as any email address, including the demo accounts. It makes the demo easy to try; it is not production auth. Setting `RESEND_API_KEY` and a verified `EMAIL_FROM` switches to real email with no code change.
+- **Email sign-in is in dev mode.** No verified email sender is set up yet, so the 6-digit sign-in code is shown on screen instead of emailed. This also means anyone can sign in as any email address, including the demo accounts. (Codes by text message are real: ClickSend is configured in production.) It makes the demo easy to try; it is not production auth. Setting `RESEND_API_KEY` and a verified `EMAIL_FROM` switches to real email with no code change.
 - `pnpm smoke` runs the whole demo loop below against the live URL with two people and the real AI. Last two runs: passed in 27s and 22s, with the live update reaching the other screen in 797 ms and 801 ms.
 
 ## Works live on the URL
 
 **Accounts and circles**
-- Sign in with an email magic link: single use, expires in 15 minutes, only a hash of the token stored. Sent by Resend when configured; otherwise shown on screen (see above).
+- Sign in with a 6-digit code sent to your email or mobile number (replaced the magic link after the 18 Oct feedback). Codes work once, expire in 10 minutes, allow 5 wrong tries, and at most 5 can be requested per address every 15 minutes. Only a keyed hash is stored. A new email creates an account, but texts only go to a number already on an account (one a caretaker added, or one saved from Welcome/Circle); a number can belong to one account only. Old magic links still work until they expire.
 - Optional password: set it from the Circle tab, then sign in with email and password.
 - First-time name prompt (“What should the family call you?”).
-- Create a circle: name, optional photo, mobility, planning notes, and “I am / someone setting it up for”. The photo is private and served through a membership check.
+- Three roles (18 Oct feedback): **owner** (the person the circle is for), **caretaker** (sets it up, posts, adds people) and **viewer** (reads, comments, takes quests). Whoever signs up first is a caretaker. Migration `0008` turned each existing circle’s owner (the person who set it up) into a caretaker, and family and care team into viewers.
+- Create a circle (caretaker): the person’s photo, name, email and (optional) mobile number, plus mobility and planning notes. This makes that person’s own account, and they are the circle’s owner. The photo is private and served through a membership check.
 - Many circles per user, with a circle switcher on Home.
-- Update mobility and notes from Home (owner and family).
-- Invite by QR code or link, with the role chosen at invite time (family and friends, or care team doctor). Joining from the QR: sign in → name → join → circle home. The smoke test does this as a second person.
+- Update mobility and notes from Home (owner and caretakers).
+- Add people (Circle → Add people): name, email, optional mobile number, and “View and help” (viewer) or “Look after it” (caretaker). Each circle has one link and QR code. Opening it means signing in with the email or number the caretaker entered, and only people on the list get in; anyone else sees who to ask. Caretakers can remove people (never the owner). The smoke test does this as a second person.
 - Members list with roles.
 
 **Wishes**
@@ -51,7 +52,7 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
   - If the AI fails, the photos and words are kept and “Make the card” can be retried without re-uploading.
 - Card reveal: spin-in, shine and sparkle, then “Add to the book” (the card flies into the book), “Change the words” (author only), “Open the card”, “Play again”. Respects reduced-motion settings.
 - Card detail: photos (clipped to their frame, so tall photos never cover the words), words, credit line (“Made from N photos and <name>’s story”), place and date, and messages to the person. There are no likes: comments are how people show love.
-- Only the circle’s owner posts: wishes, plans, Talk it through, cards, memories, photos and voice notes. Everyone else reads, comments and takes quests. Posting controls are hidden from them, and the API refuses with 403.
+- Only the owner and caretakers post: wishes, plans, Talk it through, cards, memories, photos and voice notes. Viewers read, comment and take quests. Posting controls are hidden from them, and the API refuses with 403.
 - Done wishes: when every quest in a wish’s plan is done, the wish is done. It shows greyed out with a check and “Done · every quest is complete”, moves to the bottom of the wish lists, and becomes read-only: its plan can’t be updated and its words can’t be changed (the API refuses with 409 `wish_done`). Moments and cards can still be added from it.
 - Microphone on New wish: tap it and speak, and the words go into the wish box (browser speech recognition, where supported).
 - Share one card: the card’s owner can create a link that anyone can open without signing in. It shows only that card (words, photos, recordings), with no messages, members or anything else from the circle. “Stop sharing” turns the link off straight away. Shared pages are marked noindex.
@@ -66,11 +67,11 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
   - They upload the same way as photos. The server checks the stored file’s real type and size and keeps it as-is at `<circleId>/<mediaId>.<ext>`.
   - They play on the card from the same gated media URL.
 - Card level-up: a card turns gold everywhere it appears when it gets its first comment, from anyone. Photos and voice notes alone don’t make it gold. (The spec asked for 3 or more contributors; the user changed this after the 18 Oct review.) Cards with no comments yet show “A message will turn this card gold”. Migration `0006` recalculated existing cards to match. It gets a “Gold card · the family loves this one” chip and posts once to the feed. The moment it turns gold, the card pulses, glows, sweeps with light and throws sparkles, and the person whose message tipped it over sees a one-time “✨ Levelled up” toast. Gold cards get the design’s gold border: a dark-amber-to-gold gradient frame with a soft band of light travelling around it and a glossy highlight. They also keep a gentle shimmer and a slowly turning gold aura (in the book’s collection and timeline too). When a card gets its first comment, it turns over once for everyone viewing it, like the new-card reveal: a smooth 3D turn showing the card’s amber back, twinkling stars, a sparkle burst and a shine as it lands. All motion is off with reduced-motion settings.
-- Memorial mode (owner only): a confirmation screen explains what changes; it can be undone for 30 days.
-- If the owner can’t switch (for example Rose set up the circle herself and has died), there are two other ways. Both are on the Circle tab:
-  - **Trusted person**: the owner names one family member in advance (the Circle tab nudges them when the patient set up the circle). That person can turn the book into a memorial album straight away.
-  - **Two family members**: one asks and a different one confirms. The switch then happens 7 days later. The owner gets a notification and a text (whenever they have a number, even if they haven’t opened texts for posts) and can tap “Cancel, I’m still here”. Either family member can withdraw. Care team members can’t take part.
-  - Whoever completes the switch becomes the circle’s owner; the old owner becomes family. Everyone is notified, and the new owner has the usual 30-day undo. There is no scheduler: a confirmed request whose 7 days are up is carried out the next time anyone in the circle opens the app. Migration `0007` adds `circles.trusted_user_id` and `memorial_requests`, with one open request per circle.
+- Memorial mode (owner and caretakers): a confirmation screen explains what changes; it can be undone for 30 days.
+- If no caretaker can switch, there are two other ways. Both are on the Circle tab:
+  - **Trusted person**: the owner or a caretaker names one viewer in advance. That person can turn the book into a memorial album straight away.
+  - **Two viewers**: one asks and a different one confirms. The switch then happens 7 days later. The owner and caretakers get a notification and a text (whenever they have a number, even if they haven’t opted in to texts for posts), and any of them can tap “Cancel, I’m still here”. Either viewer can withdraw.
+  - Whoever completes the switch becomes a caretaker; nobody else’s role changes. Everyone is notified, and the 30-day undo applies. There is no scheduler: a confirmed request whose 7 days are up is carried out the next time anyone in the circle opens the app. Migration `0007` adds `circles.trusted_user_id` and `memorial_requests`, with one open request per circle.
   - Home becomes “Remembering <name>” with “Share a memory” and the newest cards (who shared each, and what it holds).
   - The menu becomes Home / Book / Family.
   - Adding wishes and “Talk it through” are put away: those pages redirect and the wish API refuses.
@@ -87,11 +88,11 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 - `GET /api/health` runs a real `SELECT 1`.
 - Every API route checks circle membership, validates input with zod, and returns `{ error: { code, message } }` without stack traces. Logs are structured JSON with a request id.
 - Every AI call has a 20s timeout and retries with backoff, and logs model, tokens and latency. Sonnet calls use the server-side refusal fallback.
-- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 106 tests (authz matrix, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the first comment, voice limits, memorial undo window and handover (trusted switch, ask/confirm/7 days, owner cancel), book page order, a real PDF render, copy lint). `pnpm smoke` is the Playwright demo-loop test.
+- `pnpm lint` includes the banned-word copy lint. `pnpm test` runs 112 tests (authz matrix for the three roles, sign-in codes (single use, wrong tries, rate limit), creating circles and adding people, magic-link expiry and single use, quest states including `locked`, visibility and feed privacy, plan carry-forward, both hemispheres, photo pipeline, level-up firing exactly once at the first comment, voice limits, memorial undo window and handover (trusted switch, ask/confirm/7 days, owner cancel), book page order, a real PDF render, copy lint). `pnpm smoke` is the Playwright demo-loop test.
 
 ## Seeded for context
 
-- The “Nana Rose” circle: Ploy (owner), Tom, Krit, Aunt May (family), Dr Lin (doctor). Tom is the second demo account for the two-browser check.
+- The “Nana Rose” circle: Nana Rose (owner, rose@wishcircle.demo), Ploy (caretaker), Tom, Krit, Aunt May and Dr Lin (viewers). Tom is the second demo account for the two-browser check. (The production demo circle was seeded before roles changed; there, Ploy is a caretaker and Rose has no account.)
 - Three wishes, two hand-written plans, and quests in mixed states (done, in progress, open, open needing the care team). New plans come from the AI.
 - Two cards without photos, and activity items matching the design.
 
@@ -120,6 +121,6 @@ _Last updated: after the 17 Oct smoke test (1stQuest name and amber design, owne
 - Switching to memorial mode posts nothing to the activity feed, on purpose.
 - The PDF uses the built-in Helvetica font rather than Atkinson Hyperlegible, so printing doesn’t depend on fetching a font at render time.
 - The app is named 1stQuest and uses the amber design from the updated Figma export. Its background image wasn’t in the export, so the page uses a warm cream colour instead.
-- “Only the owner posts” is stricter than the original spec, which let family add wishes and moments. Taking quests stays open to everyone, because it isn’t posting and it is the heart of the demo.
+- “Only the owner and caretakers post” is stricter than the original spec, which let family add wishes and moments. Taking quests stays open to everyone, because it isn’t posting and it is the heart of the demo.
 - Gold now comes from comments and contributions only (there are no likes).
-- The smoke test creates its own circle on each run (and covers create circle and invite/join) instead of adding to Nana Rose’s circle, so the seeded demo stays clean.
+- The smoke test creates its own circle on each run (and covers create circle and invite/join) instead of adding to Nana Rose’s circle, so the seeded demo stays clean. It signs in with on-screen codes, creates a circle for a new person, adds the second person, and has them join through the link.

@@ -4,13 +4,15 @@ import { route, badRequest } from "@/lib/http";
 import { requireApiUser, setActiveCircle } from "@/lib/auth/session";
 import { createCircle, listMyCircles, setCirclePhoto } from "@/lib/db/queries/circles";
 import { MOBILITIES } from "@/lib/db/types";
+import { Phone, personError } from "@/lib/people";
 import { storageConfigured, uploadObject } from "@/lib/storage";
 
 const Fields = z.object({
   patientName: z.string().trim().min(1, "Who is this circle for?").max(80),
+  patientEmail: z.string().trim().toLowerCase().pipe(z.email("Add their email, so they can sign in.")),
+  patientPhone: Phone,
   mobility: z.enum(MOBILITIES as [string, ...string[]]),
   mobilityNotes: z.string().trim().max(500).optional().transform((v) => v || null),
-  setUpByPatient: z.enum(["true", "false"]).transform((v) => v === "true"),
 });
 
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -21,7 +23,10 @@ export const GET = route(async () => {
   return NextResponse.json({ circles: await listMyCircles(user.id) });
 });
 
-/** multipart/form-data: patientName, mobility, mobilityNotes?, setUpByPatient, photo? */
+/**
+ * multipart/form-data: patientName, patientEmail, patientPhone?, mobility, mobilityNotes?, photo?
+ * The person gets an account and owns the circle; whoever creates it is a caretaker.
+ */
 export const POST = route(async (req, { log }) => {
   const user = await requireApiUser();
   const form = await req.formData();
@@ -35,12 +40,12 @@ export const POST = route(async (req, { log }) => {
   }
 
   const circle = await createCircle({
-    ownerId: user.id,
-    ownerName: null,
-    patientName: fields.patientName,
+    caretakerId: user.id,
+    patient: { name: fields.patientName, email: fields.patientEmail, phone: fields.patientPhone },
     mobility: fields.mobility as (typeof MOBILITIES)[number],
     mobilityNotes: fields.mobilityNotes,
-    setUpByPatient: fields.setUpByPatient,
+  }).catch((err) => {
+    throw personError(err) ?? err;
   });
 
   if (hasPhoto) {

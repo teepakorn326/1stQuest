@@ -7,7 +7,7 @@ import { Greeting } from "@/components/Greeting";
 import { MobilityCard } from "@/components/MobilityCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
-import { canEditCircle } from "@/lib/authz";
+import { canEditCircle, manages } from "@/lib/authz";
 import { describeActivity, timeAgo } from "@/lib/activityText";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { listActivity } from "@/lib/db/queries/activity";
@@ -50,7 +50,7 @@ export default async function HomePage() {
         <div className="absolute top-4 right-5 z-10">
           <NotificationBell unread={await countUnread(user.id)} />
         </div>
-        <MemorialHome name={circle.patient_name} photoSrc={photoSrc0} cards={await listRecentCards(circle.id, user.id)} canPost={circle.role === "owner"} />
+        <MemorialHome name={circle.patient_name} photoSrc={photoSrc0} cards={await listRecentCards(circle.id, user.id)} canPost={manages(circle.role)} />
       </>
     );
   }
@@ -82,7 +82,7 @@ export default async function HomePage() {
         canEdit={canEditCircle({ userId: user.id, role: circle.role })}
       />
 
-      {circle.role === "owner" && (
+      {manages(circle.role) && (
         <ButtonLink href="/wishes/new" className="h-14">
           <PlusIcon size={22} /> Add a wish
         </ButtonLink>
@@ -92,9 +92,9 @@ export default async function HomePage() {
         <h2 className="m-0 text-lg font-bold">Wishes we’re working on</h2>
         {wishes.length === 0 ? (
           <p className="m-0 rounded-[14px] border border-dashed border-accent bg-surface px-4 py-4 text-[15px] text-ink-2">
-            {circle.role === "owner"
+            {manages(circle.role)
               ? "No wishes yet. There’s no rush. Add one whenever something comes to mind."
-              : `No wishes shared yet. When ${circle.patient_name}’s owner adds one, it shows up here.`}
+              : `No wishes shared yet. When a caretaker adds one, it shows up here.`}
           </p>
         ) : (
           wishes.map((w) => <WishRow key={w.id} wish={w} />)

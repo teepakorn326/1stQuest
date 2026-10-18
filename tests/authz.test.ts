@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canClaimQuest, canEditCircle, canSeeWish, canSwitchMode, type Viewer } from "@/lib/authz";
+import { canClaimQuest, canEditCircle, canPost, canSeeWish, canSwitchMode, type Viewer } from "@/lib/authz";
 import type { Role, Visibility } from "@/lib/db/types";
 
 const AUTHOR = "u-author";
@@ -9,7 +9,7 @@ const wish = (visibility: Visibility) => ({ author_id: AUTHOR, visibility });
 const v = (userId: string, role: Role | null): Viewer => ({ userId, role });
 
 describe("canSeeWish", () => {
-  const roles: Role[] = ["owner", "family", "doctor"];
+  const roles: Role[] = ["owner", "caretaker", "viewer"];
 
   it.each(roles)("circle wishes are visible to every %s", (role) => {
     expect(canSeeWish(v(OTHER, role), wish("circle"))).toBe(true);
@@ -20,7 +20,7 @@ describe("canSeeWish", () => {
   });
 
   it("private wishes are visible to their author", () => {
-    expect(canSeeWish(v(AUTHOR, "family"), wish("private"))).toBe(true);
+    expect(canSeeWish(v(AUTHOR, "viewer"), wish("private"))).toBe(true);
   });
 
   it.each(roles)("chosen wishes: visible to a chosen %s, hidden from others", (role) => {
@@ -38,8 +38,8 @@ describe("canClaimQuest", () => {
   const open = { status: "open" as const, claimed_by_user_id: null };
 
   it("members can claim open quests on circle wishes", () => {
-    expect(canClaimQuest(v(OTHER, "family"), wish("circle"), open)).toBe(true);
-    expect(canClaimQuest(v(OTHER, "doctor"), wish("circle"), open)).toBe(true);
+    expect(canClaimQuest(v(OTHER, "viewer"), wish("circle"), open)).toBe(true);
+    expect(canClaimQuest(v(OTHER, "caretaker"), wish("circle"), open)).toBe(true);
   });
 
   it("nobody can claim on a private wish, even the author", () => {
@@ -48,21 +48,21 @@ describe("canClaimQuest", () => {
 
   it("locked, in-progress and done quests can't be claimed", () => {
     for (const status of ["locked", "in_progress", "done"] as const) {
-      expect(canClaimQuest(v(OTHER, "family"), wish("circle"), { status, claimed_by_user_id: null })).toBe(false);
+      expect(canClaimQuest(v(OTHER, "viewer"), wish("circle"), { status, claimed_by_user_id: null })).toBe(false);
     }
   });
 
   it("chosen wishes: only chosen viewers can claim", () => {
-    expect(canClaimQuest(v(CHOSEN, "family"), wish("chosen"), open, [CHOSEN])).toBe(true);
-    expect(canClaimQuest(v(OTHER, "family"), wish("chosen"), open, [CHOSEN])).toBe(false);
+    expect(canClaimQuest(v(CHOSEN, "viewer"), wish("chosen"), open, [CHOSEN])).toBe(true);
+    expect(canClaimQuest(v(OTHER, "viewer"), wish("chosen"), open, [CHOSEN])).toBe(false);
   });
 });
 
 describe("canEditCircle", () => {
-  it("owner and family can, doctors and non-members can't", () => {
+  it("the owner and caretakers can, viewers and non-members can't", () => {
     expect(canEditCircle(v(OTHER, "owner"))).toBe(true);
-    expect(canEditCircle(v(OTHER, "family"))).toBe(true);
-    expect(canEditCircle(v(OTHER, "doctor"))).toBe(false);
+    expect(canEditCircle(v(OTHER, "caretaker"))).toBe(true);
+    expect(canEditCircle(v(OTHER, "viewer"))).toBe(false);
     expect(canEditCircle(v(OTHER, null))).toBe(false);
   });
 });
@@ -71,14 +71,23 @@ describe("canSwitchMode", () => {
   const now = new Date("2026-10-17T00:00:00Z");
   const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000);
 
-  it("only the owner can switch to memorial", () => {
+  it("the owner and caretakers can switch to memorial, viewers can't", () => {
     expect(canSwitchMode(v(OTHER, "owner"), { mode: "active", mode_changed_at: null }, now)).toBe(true);
-    expect(canSwitchMode(v(OTHER, "family"), { mode: "active", mode_changed_at: null }, now)).toBe(false);
-    expect(canSwitchMode(v(OTHER, "doctor"), { mode: "active", mode_changed_at: null }, now)).toBe(false);
+    expect(canSwitchMode(v(OTHER, "caretaker"), { mode: "active", mode_changed_at: null }, now)).toBe(true);
+    expect(canSwitchMode(v(OTHER, "viewer"), { mode: "active", mode_changed_at: null }, now)).toBe(false);
   });
 
   it("owner can undo within 30 days, not after", () => {
     expect(canSwitchMode(v(OTHER, "owner"), { mode: "memorial", mode_changed_at: daysAgo(29) }, now)).toBe(true);
     expect(canSwitchMode(v(OTHER, "owner"), { mode: "memorial", mode_changed_at: daysAgo(31) }, now)).toBe(false);
+  });
+});
+
+describe("canPost", () => {
+  it("the owner and caretakers post; viewers read, comment and take quests", () => {
+    expect(canPost(v(OTHER, "owner"))).toBe(true);
+    expect(canPost(v(OTHER, "caretaker"))).toBe(true);
+    expect(canPost(v(OTHER, "viewer"))).toBe(false);
+    expect(canPost(v(OTHER, null))).toBe(false);
   });
 });

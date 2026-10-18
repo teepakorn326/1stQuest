@@ -1,4 +1,5 @@
 import "server-only";
+import { PersonError, upsertPerson, type PersonInput } from "@/lib/db/queries/people";
 import { sql } from "@/lib/db/client";
 import { insertActivity } from "@/lib/db/queries/activity";
 import type { CircleRow, Mobility, Role } from "@/lib/db/types";
@@ -24,24 +25,26 @@ export async function findCircleForMember(circleId: string, userId: string): Pro
   return row ?? null;
 }
 
+/**
+ * A caretaker creates a circle for someone: that person gets an account (by email, with their mobile
+ * number if given) and is the circle's owner; the caretaker who made it is a caretaker.
+ */
 export async function createCircle(input: {
-  ownerId: string;
-  ownerName: string | null;
-  patientName: string;
+  caretakerId: string;
+  patient: PersonInput;
   mobility: Mobility;
   mobilityNotes: string | null;
-  setUpByPatient: boolean;
 }): Promise<CircleRow> {
   return sql.begin(async (tx) => {
+    const owner = await upsertPerson(tx, input.patient);
+    if (owner.id === input.caretakerId) throw new PersonError("is_you");
     const [circle] = await tx<CircleRow[]>`
       insert into circles (patient_name, mobility, mobility_notes, set_up_by_patient)
-      values (${input.patientName}, ${input.mobility}, ${input.mobilityNotes}, ${input.setUpByPatient})
+      values (${input.patient.name.trim()}, ${input.mobility}, ${input.mobilityNotes}, false)
       returning *`;
-    await tx`insert into memberships (circle_id, user_id, role) values (${circle!.id}, ${input.ownerId}, 'owner')`;
-    if (input.ownerName) {
-      await tx`update users set name = ${input.ownerName} where id = ${input.ownerId} and name is null`;
-    }
-    await insertActivity(tx, { circleId: circle!.id, actorId: input.ownerId, type: "circle_created", refId: circle!.id });
+    await tx`insert into memberships (circle_id, user_id, role) values
+      (${circle!.id}, ${owner.id}, 'owner'), (${circle!.id}, ${input.caretakerId}, 'caretaker')`;
+    await insertActivity(tx, { circleId: circle!.id, actorId: input.caretakerId, type: "circle_created", refId: circle!.id });
     return circle!;
   });
 }

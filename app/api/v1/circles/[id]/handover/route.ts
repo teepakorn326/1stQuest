@@ -11,10 +11,10 @@ import { appUrl } from "@/lib/env";
 const Body = z.object({ action: z.enum(["switch", "ask", "confirm", "cancel"]) });
 
 /**
- * When the owner can't turn the book into a memorial album:
- * - "switch": the trusted person does it now and becomes the owner;
- * - "ask" / "confirm": two family members agree, and it happens 7 days later;
- * - "cancel": the owner ("I'm still here") or either family member stops it.
+ * When no caretaker can turn the book into a memorial album:
+ * - "switch": the trusted viewer does it now and becomes a caretaker;
+ * - "ask" / "confirm": two viewers agree, and it happens 7 days later;
+ * - "cancel": the owner or a caretaker ("I'm still here"), or either viewer, stops it.
  */
 export const POST = route<{ id: string }>(async (req, { params, log }) => {
   const user = await requireApiUser();
@@ -29,30 +29,30 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
 
   switch (action) {
     case "switch": {
-      if (!canTrustedSwitch(viewer, circle)) throw forbidden("Only the trusted person the owner chose can do this.");
+      if (!canTrustedSwitch(viewer, circle)) throw forbidden("Only the trusted person the caretakers chose can do this.");
       const sms = await trustedSwitch(ctx, user.id);
       if (!sms) throw conflict("This has already changed. Refresh to see the latest.");
       queueTexts(sms, `1stQuest: ${name} turned ${circle.patient_name}’s book into a memorial album. ${appUrl()}/home`);
       log.info("memorial switch by trusted person", { circleId: circle.id });
-      return NextResponse.json({ mode: "memorial", owner: user.id });
+      return NextResponse.json({ mode: "memorial", caretaker: user.id });
     }
     case "ask": {
-      if (!canAsk(viewer, circle, open)) throw forbidden(open ? "Someone has already asked." : "Only family members can ask for this.");
+      if (!canAsk(viewer, circle, open)) throw forbidden(open ? "Someone has already asked." : "Only viewers ask for this; caretakers can turn the book into a memorial album themselves.");
       const sms = await askMemorial(ctx, user.id);
       if (!sms) throw conflict("Someone has already asked.");
-      queueTexts(sms, `1stQuest: ${name} asked to turn ${circle.patient_name}’s book into a memorial album. Another family member needs to confirm. ${link}`);
+      queueTexts(sms, `1stQuest: ${name} asked to turn ${circle.patient_name}’s book into a memorial album. Someone else in the circle needs to confirm. ${link}`);
       return NextResponse.json({ status: "asked" }, { status: 201 });
     }
     case "confirm": {
-      if (!canConfirm(viewer, circle, open)) throw forbidden("A different family member from the one who asked needs to confirm.");
+      if (!canConfirm(viewer, circle, open)) throw forbidden("Someone other than the person who asked needs to confirm.");
       const done = await confirmMemorial(ctx, user.id);
       if (!done) throw conflict("This has already changed. Refresh to see the latest.");
       const when = done.takesEffectAt.toLocaleDateString("en-AU", { day: "numeric", month: "long", timeZone: "UTC" });
-      queueTexts(done.sms, `1stQuest: ${circle.patient_name}’s book will become a memorial album on ${when}. If this is a mistake, the owner can cancel: ${link}`);
+      queueTexts(done.sms, `1stQuest: ${circle.patient_name}’s book will become a memorial album on ${when}. If this is a mistake, a caretaker can cancel: ${link}`);
       return NextResponse.json({ status: "confirmed", takesEffectAt: done.takesEffectAt });
     }
     case "cancel": {
-      if (!canCancel(viewer, open)) throw forbidden("Only the owner or the family members who asked can cancel this.");
+      if (!canCancel(viewer, open)) throw forbidden("Only the caretakers or the people who asked can cancel this.");
       const sms = await cancelMemorial(ctx, user.id);
       if (!sms) throw conflict("This has already changed. Refresh to see the latest.");
       queueTexts(sms, `1stQuest: ${name} cancelled the memorial album for ${circle.patient_name}’s book. ${link}`);

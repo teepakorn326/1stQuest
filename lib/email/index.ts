@@ -4,11 +4,13 @@ import { DevEmailSender } from "@/lib/email/dev";
 import { ResendEmailSender } from "@/lib/email/resend";
 
 export type SignInEmail = { to: string; url: string };
+export type CodeEmail = { to: string; code: string };
 
 export interface EmailSender {
   /** `true` when the link is delivered by email; `false` when the caller must show it on screen. */
   readonly delivers: boolean;
   sendSignIn(msg: SignInEmail): Promise<void>;
+  sendCode(msg: CodeEmail): Promise<void>;
 }
 
 export function isDevEmailMode(): boolean {

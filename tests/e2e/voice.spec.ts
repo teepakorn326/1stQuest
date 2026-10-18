@@ -12,8 +12,9 @@ test.use({
 test("record a voice note on a card, save it, and play it back", async ({ page }) => {
   await page.goto("/sign-in?next=/book");
   await page.getByLabel("Email").fill(process.env.VOICE_EMAIL ?? "smoke-owner@wishcircle.test");
-  await page.getByRole("button", { name: "Send me a sign-in link" }).click();
-  await page.getByTestId("dev-link").click();
+  await page.getByRole("button", { name: "Send me a code" }).click();
+  await page.getByLabel("Code").fill((await page.getByTestId("dev-code").innerText()).trim());
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL((u) => u.pathname === "/book");
 
   await page.getByTestId("book-card").first().click();

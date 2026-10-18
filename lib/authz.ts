@@ -6,8 +6,7 @@ export type Viewer = { userId: string; role: Role | null };
 type WishLike = { author_id: string; visibility: Visibility };
 
 /**
- * Private: author only. Chosen: author + chosen viewers. Circle: every member (doctors included —
- * doctors see what the owner has shared with the circle, nothing more).
+ * Private: author only. Chosen: author + chosen viewers. Circle: every member.
  */
 export function canSeeWish(viewer: Viewer, wish: WishLike, chosenViewerIds: readonly string[] = []): boolean {
   if (!viewer.role) return false;
@@ -35,14 +34,19 @@ export function canClaimQuest(
   return quest.claimed_by_user_id === null || quest.claimed_by_user_id === viewer.userId;
 }
 
-/** Circle details (name, photo, mobility) and invites: owner and family. Doctors are read-mostly. */
-export function canEditCircle(viewer: Viewer): boolean {
-  return viewer.role === "owner" || viewer.role === "family";
+/** The owner and caretakers run the circle; viewers read, comment and take quests. */
+export function manages(role: Role | null | undefined): boolean {
+  return role === "owner" || role === "caretaker";
 }
 
-/** Memorial mode switch and undo: owner only; undo allowed for 30 days after the switch. */
+/** Circle details (name, photo, mobility) and adding people: the owner and caretakers. */
+export function canEditCircle(viewer: Viewer): boolean {
+  return manages(viewer.role);
+}
+
+/** Memorial mode switch and undo: the owner and caretakers; undo allowed for 30 days after the switch. */
 export function canSwitchMode(viewer: Viewer, circle: Pick<CircleRow, "mode" | "mode_changed_at">, now = new Date()): boolean {
-  if (viewer.role !== "owner") return false;
+  if (!manages(viewer.role)) return false;
   if (circle.mode === "active") return true;
   if (!circle.mode_changed_at) return true;
   const UNDO_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
@@ -66,17 +70,17 @@ export function canSeeCard(
 
 export const MEMORIAL_UNDO_DAYS = 30;
 
-/** Last moment the owner can undo memorial mode, or null when not in memorial mode. */
+/** Last moment memorial mode can be undone, or null when not in memorial mode. */
 export function memorialUndoUntil(circle: Pick<CircleRow, "mode" | "mode_changed_at">): Date | null {
   if (circle.mode !== "memorial" || !circle.mode_changed_at) return null;
   return new Date(circle.mode_changed_at.getTime() + MEMORIAL_UNDO_DAYS * 24 * 60 * 60 * 1000);
 }
 
 /**
- * Posting (wishes, plans, Talk it through, cards, memories, photos, voice notes, videos) is the
- * owner's. Everyone else in the circle reads, comments and takes quests.
+ * Posting (wishes, plans, Talk it through, cards, memories, photos, voice notes) is for the owner
+ * and caretakers. Viewers read, comment and take quests.
  */
 export function canPost(viewer: Viewer): boolean {
-  return viewer.role === "owner";
+  return manages(viewer.role);
 }
-export const POST_FORBIDDEN = "Only the circle’s owner can post. You can leave a message or take a quest.";
+export const POST_FORBIDDEN = "Only the caretakers can post. You can leave a message or take a quest.";

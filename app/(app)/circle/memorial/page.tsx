@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { canSwitchMode, memorialUndoUntil } from "@/lib/authz";
+import { canSwitchMode, memorialUndoUntil, manages } from "@/lib/authz";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { MemorialSwitch } from "./MemorialSwitch";
 
@@ -10,7 +10,7 @@ export default async function MemorialPage() {
   const user = await requirePageUser("/circle/memorial");
   const circle = await getActiveCircle(user.id);
   if (!circle) redirect("/home");
-  if (circle.role !== "owner") redirect("/circle");
+  if (!manages(circle.role)) redirect("/circle");
   const until = memorialUndoUntil(circle);
   const canSwitch = canSwitchMode({ userId: user.id, role: circle.role }, circle);
   const name = circle.patient_name;

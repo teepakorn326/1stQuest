@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { manages } from "@/lib/authz";
 import { talkOpener } from "@/lib/ai/prompts/talk";
 import { getActiveCircle, requirePageUser } from "@/lib/auth/session";
 import { ensureConversation, listConversationMessages } from "@/lib/db/queries/conversations";
@@ -9,8 +10,8 @@ export const dynamic = "force-dynamic";
 export default async function TalkPage() {
   const user = await requirePageUser("/wishes/talk");
   const circle = await getActiveCircle(user.id);
-  if (!circle || circle.mode === "memorial" || circle.role !== "owner") redirect("/home");
-  const speakerIsPatient = circle.set_up_by_patient && circle.role === "owner";
+  if (!circle || circle.mode === "memorial" || !manages(circle.role)) redirect("/home");
+  const speakerIsPatient = circle.role === "owner";
   const conversationId = await ensureConversation(circle.id, user.id, talkOpener(circle.patient_name, speakerIsPatient));
   const messages = await listConversationMessages(conversationId);
 

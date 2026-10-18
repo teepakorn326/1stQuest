@@ -9,7 +9,7 @@ const v = (role: Viewer["role"], userId = ME): Viewer => ({ userId, role });
 
 describe("questTransition", () => {
   it("claim: open → in_progress for a member", () => {
-    expect(questTransition("claim", { status: "open", claimed_by_user_id: null }, circleWish, v("family"))).toEqual({
+    expect(questTransition("claim", { status: "open", claimed_by_user_id: null }, circleWish, v("viewer"))).toEqual({
       ok: true,
       status: "in_progress",
       claimedBy: ME,
@@ -18,7 +18,7 @@ describe("questTransition", () => {
 
   it("claim fails unless open", () => {
     for (const status of ["in_progress", "done"] as const) {
-      expect(questTransition("claim", { status, claimed_by_user_id: OTHER }, circleWish, v("family"))).toMatchObject({ ok: false, reason: "wrong_state" });
+      expect(questTransition("claim", { status, claimed_by_user_id: OTHER }, circleWish, v("viewer"))).toMatchObject({ ok: false, reason: "wrong_state" });
     }
   });
 
@@ -36,16 +36,16 @@ describe("questTransition", () => {
   it("chosen wishes: only chosen viewers can claim", () => {
     const chosen = { author_id: OTHER, visibility: "chosen" as const };
     const open = { status: "open" as const, claimed_by_user_id: null };
-    expect(questTransition("claim", open, chosen, v("family"), [ME]).ok).toBe(true);
-    expect(questTransition("claim", open, chosen, v("family"), ["someone"]).ok).toBe(false);
+    expect(questTransition("claim", open, chosen, v("viewer"), [ME]).ok).toBe(true);
+    expect(questTransition("claim", open, chosen, v("viewer"), ["someone"]).ok).toBe(false);
   });
 
   it("done and release: the claimer or the owner, nobody else", () => {
     const mine = { status: "in_progress" as const, claimed_by_user_id: ME };
     const theirs = { status: "in_progress" as const, claimed_by_user_id: OTHER };
-    expect(questTransition("done", mine, circleWish, v("family"))).toMatchObject({ ok: true, status: "done", claimedBy: ME });
-    expect(questTransition("release", mine, circleWish, v("family"))).toMatchObject({ ok: true, status: "open", claimedBy: null });
-    expect(questTransition("done", theirs, circleWish, v("family"))).toMatchObject({ ok: false, reason: "not_allowed" });
+    expect(questTransition("done", mine, circleWish, v("viewer"))).toMatchObject({ ok: true, status: "done", claimedBy: ME });
+    expect(questTransition("release", mine, circleWish, v("viewer"))).toMatchObject({ ok: true, status: "open", claimedBy: null });
+    expect(questTransition("done", theirs, circleWish, v("viewer"))).toMatchObject({ ok: false, reason: "not_allowed" });
     expect(questTransition("done", theirs, circleWish, v("owner"))).toMatchObject({ ok: true, claimedBy: OTHER });
     expect(questTransition("done", { status: "open", claimed_by_user_id: null }, circleWish, v("owner"))).toMatchObject({ ok: false, reason: "wrong_state" });
   });

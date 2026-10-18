@@ -9,7 +9,7 @@ export function activityParts(a: Pick<ActivityItem, "type" | "payload">): { verb
     case "circle_created":
       return { verb: "started the circle", object: null };
     case "member_joined":
-      return { verb: p.role === "doctor" ? "joined as care team" : "joined the circle", object: null };
+      return { verb: p.role === "caretaker" ? "joined as a caretaker" : "joined the circle", object: null };
     case "mobility_updated":
       return { verb: "updated how things are getting around", object: null };
     case "wish_added":

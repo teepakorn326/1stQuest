@@ -6,7 +6,7 @@ import { questTransition } from "@/lib/quests";
 import { realtimeConfig } from "@/lib/realtime";
 import { PlanPanel } from "./PlanPanel";
 import { QuestItem, type QuestView } from "./QuestItem";
-import { canSeeWish } from "@/lib/authz";
+import { canSeeWish, manages } from "@/lib/authz";
 import { CATEGORY_LABEL, MOBILITY_LABEL } from "@/lib/activityText";
 import { requirePageUser } from "@/lib/auth/session";
 import { listMembers } from "@/lib/db/queries/memberships";
@@ -30,7 +30,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
   ]);
   const isAuthor = wish.author_id === user.id;
   const viewer = { userId: user.id, role: wish.viewer_role };
-  const canPlan = wish.viewer_role === "owner" && !wish.done;
+  const canPlan = manages(wish.viewer_role) && !wish.done;
   const quests: QuestView[] = (plan?.quests ?? []).map((q) => {
     const quest = { status: q.status, claimed_by_user_id: q.claimed_by_user_id };
     const can = (a: "claim" | "release" | "done") => questTransition(a, quest, wish, viewer, wish.viewer_ids).ok;
@@ -63,7 +63,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
           <CategoryIcon category={wish.category} size={18} />
           {CATEGORY_LABEL[wish.category]}
         </span>
-        {isAuthor && wish.viewer_role === "owner" && !wish.done ? (
+        {isAuthor && manages(wish.viewer_role) && !wish.done ? (
           <Link href={`/wishes/${wish.id}/edit`} className="flex h-11 items-center px-2 text-[15px] font-bold no-underline">
             Change
           </Link>
@@ -125,7 +125,7 @@ export default async function WishPage({ params }: { params: Promise<{ id: strin
           </section>
         )}
       </div>
-      {wish.viewer_role === "owner" && (
+      {manages(wish.viewer_role) && (
         <div className="sticky bottom-[76px] mt-auto border-t border-line bg-bg px-5 pt-3 pb-4">
           <ButtonLink href={`/wishes/${wish.id}/moments`} className="w-full">
             We did it, add moments

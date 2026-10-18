@@ -17,6 +17,6 @@ export const POST = route<{ id: string }>(async (req, { params }) => {
   if (circle.mode === "memorial") throw conflict("This book is a memorial album now. Share a memory instead.", "memorial_mode");
   const input = await readBody(req, WishInput);
   const wish = await createWish(circle.id, user.id, input);
-  queueTexts(wish.sms, textFor({ kind: "wish", actorName: user.name ?? "The owner", patientName: circle.patient_name, title: wish.text, path: `/wishes/${wish.id}` }));
+  queueTexts(wish.sms, textFor({ kind: "wish", actorName: user.name ?? "A caretaker", patientName: circle.patient_name, title: wish.text, path: `/wishes/${wish.id}` }));
   return NextResponse.json({ wish: { id: wish.id } }, { status: 201 });
 });

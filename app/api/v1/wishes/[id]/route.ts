@@ -19,6 +19,6 @@ export const PATCH = route<{ id: string }>(async (req, { params }) => {
   const updated = await updateWish(wish.id, user.id, input);
   if (!updated) throw notFound();
   const circle = await findCircleForMember(wish.circle_id, user.id);
-  queueTexts(updated.sms, textFor({ kind: "wish", actorName: user.name ?? "The owner", patientName: circle?.patient_name ?? "the", title: updated.text, path: `/wishes/${updated.id}` }));
+  queueTexts(updated.sms, textFor({ kind: "wish", actorName: user.name ?? "A caretaker", patientName: circle?.patient_name ?? "the", title: updated.text, path: `/wishes/${updated.id}` }));
   return NextResponse.json({ wish: { id: updated.id } });
 });

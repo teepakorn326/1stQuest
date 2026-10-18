@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { manages } from "@/lib/authz";
 import { redirect } from "next/navigation";
 import { ChatIcon, PlusIcon } from "@/components/icons";
 import { LiveRefresh } from "@/components/LiveRefresh";
@@ -22,7 +23,7 @@ export default async function WishesPage() {
       <PageHeader title={`${circle.patient_name}’s wishes`} />
       <LiveRefresh circleId={circle.id} realtime={realtimeConfig()} />
       <div className="flex flex-col gap-4 px-5 pt-2 pb-5">
-        {circle.role === "owner" && (
+        {manages(circle.role) && (
         <>
         <ButtonLink href="/wishes/new">
           <PlusIcon size={22} /> Add a wish

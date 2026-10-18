@@ -13,12 +13,14 @@ if (!url) {
 const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
 
 const DEMO_DOMAIN = "wishcircle.demo";
+// Rose is the owner (the circle is for her); Ploy set it up and looks after it; the rest view and help.
 const people = {
-  ploy: { name: "Ploy", role: "owner" },
-  tom: { name: "Tom", role: "family" },
-  krit: { name: "Krit", role: "family" },
-  may: { name: "Aunt May", role: "family" },
-  lin: { name: "Dr Lin", role: "doctor" },
+  rose: { name: "Nana Rose", role: "owner" },
+  ploy: { name: "Ploy", role: "caretaker" },
+  tom: { name: "Tom", role: "viewer" },
+  krit: { name: "Krit", role: "viewer" },
+  may: { name: "Aunt May", role: "viewer" },
+  lin: { name: "Dr Lin", role: "viewer" },
 } as const;
 type Key = keyof typeof people;
 
@@ -36,10 +38,10 @@ async function main() {
       ids[key] = u!.id;
     }
 
-    // Replace the previous demo circle (owned by Ploy, named Nana Rose).
+    // Replace the previous demo circle (looked after by Ploy, named Nana Rose).
     await tx`
       delete from circles c using memberships m
-      where m.circle_id = c.id and m.user_id = ${ids.ploy} and m.role = 'owner' and c.patient_name = 'Nana Rose'`;
+      where m.circle_id = c.id and m.user_id = ${ids.ploy} and m.role in ('owner', 'caretaker') and c.patient_name = 'Nana Rose'`;
 
     const [circle] = await tx<{ id: string }[]>`
       insert into circles (patient_name, mobility, mobility_notes, set_up_by_patient, hemisphere, created_at)

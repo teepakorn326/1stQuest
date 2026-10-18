@@ -28,7 +28,7 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
 
   // Owner who set the circle up for themselves is the patient talking.
   const membership = await findMembership(circle.id, user.id);
-  const speakerIsPatient = circle.set_up_by_patient && membership?.role === "owner";
+  const speakerIsPatient = membership?.role === "owner";
   const conversationId = await ensureConversation(circle.id, user.id, talkOpener(circle.patient_name, speakerIsPatient));
   const history = (await listConversationMessages(conversationId, 40)).map((m) => ({ role: m.role, content: m.content }));
 

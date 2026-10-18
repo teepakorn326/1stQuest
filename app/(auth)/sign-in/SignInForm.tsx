@@ -1,89 +1,158 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import clsx from "clsx";
+import { PhoneInput } from "@/components/PhoneInput";
 import { Button } from "@/components/ui/Button";
-import { FormError, Input, Label } from "@/components/ui/Field";
 import { DevBanner } from "@/components/ui/DevBanner";
+import { FormError, Input, Label } from "@/components/ui/Field";
 
-type State =
-  | { kind: "idle" }
-  | { kind: "sending" }
-  | { kind: "sent"; email: string }
-  | { kind: "dev"; link: string };
+type Via = "email" | "phone";
+type Step = { kind: "contact" } | { kind: "code"; devCode: string | null };
 
+const post = (url: string, body: unknown) =>
+  fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
+
+/**
+ * Sign in with a one-time code sent to your email or mobile number, or (if you set one) a password.
+ * People a caretaker added use the email or number the caretaker entered.
+ */
 export function SignInForm({ next, initialError, autoFocus }: { next: string | null; initialError: string | null; autoFocus: boolean }) {
   const router = useRouter();
+  const [via, setVia] = useState<Via>("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [usePassword, setUsePassword] = useState(false);
-  const [state, setState] = useState<State>({ kind: "idle" });
+  const [step, setStep] = useState<Step>({ kind: "contact" });
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
+  const contact = via === "email" ? { email } : { phone };
+  const shown = via === "email" ? email : phone;
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function sendCode(e?: React.FormEvent) {
+    e?.preventDefault();
     setError(null);
-    setState({ kind: "sending" });
-    const res = await fetch(usePassword ? "/api/v1/auth/password" : "/api/v1/auth/magic-link", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(usePassword ? { email, password } : { email, next }),
-    }).catch(() => null);
+    if (via === "phone" && !phone) return setError("Enter your mobile number.");
+    setBusy(true);
+    const res = usePassword ? await post("/api/v1/auth/password", { email, password }) : await post("/api/v1/auth/code", { ...contact, next });
     const data = await res?.json().catch(() => null);
-    if (!res?.ok) {
-      setError(data?.error?.message ?? "We couldn’t reach 1stQuest. Please check your connection.");
-      setState({ kind: "idle" });
-      return;
-    }
+    setBusy(false);
+    if (!res?.ok) return setError(data?.error?.message ?? "We couldn’t reach 1stQuest. Please check your connection.");
     if (usePassword) {
       router.replace(next ?? "/home");
       router.refresh();
-    } else if (data.devLink) {
-      setState({ kind: "dev", link: data.devLink });
-    } else {
-      setState({ kind: "sent", email });
+      return;
     }
+    setCode("");
+    setStep({ kind: "code", devCode: data.devCode ?? null });
   }
 
-  if (state.kind === "sent") {
+  async function verify(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    const res = await post("/api/v1/auth/code/verify", { ...contact, code });
+    const data = await res?.json().catch(() => null);
+    if (!res?.ok) {
+      setBusy(false);
+      return setError(data?.error?.message ?? "Please try again.");
+    }
+    router.replace(data.next);
+    router.refresh();
+  }
+
+  if (step.kind === "code") {
     return (
-      <div role="status" className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-5">
-        <h2 className="m-0 text-lg font-bold">Check your email</h2>
+      <form onSubmit={verify} className="m-0 flex flex-col gap-3" data-testid="code-step">
+        <h2 className="m-0 text-xl font-bold">Enter your code</h2>
         <p className="m-0 text-ink-2">
-          We sent a sign-in link to <b className="text-ink">{state.email}</b>. Open it on this device.
+          We sent a 6-digit code to <b className="text-ink">{shown}</b>. It expires in 10 minutes.
         </p>
-        <button type="button" className="self-start text-[15px] font-bold text-primary" onClick={() => setState({ kind: "idle" })}>
-          Use a different email
-        </button>
-      </div>
-    );
-  }
-
-  if (state.kind === "dev") {
-    return (
-      <DevBanner>
-        <p className="m-0">Email isn’t set up on this server, so here’s your sign-in link:</p>
-        <a href={state.link} className="mt-2 inline-block font-bold break-all text-primary" data-testid="dev-link">
-          Sign in as {email}
-        </a>
-      </DevBanner>
+        {step.devCode && (
+          <DevBanner>
+            <p className="m-0">
+              {via === "email" ? "Email" : "Texting"} isn’t set up on this server, so here’s your code:{" "}
+              <b className="text-lg tracking-widest" data-testid="dev-code">
+                {step.devCode}
+              </b>
+            </p>
+          </DevBanner>
+        )}
+        <FormError message={error} />
+        <Label htmlFor="code">Code</Label>
+        <Input
+          id="code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="[0-9 ]*"
+          maxLength={7}
+          required
+          autoFocus
+          placeholder="123456"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          className="text-center text-2xl tracking-[0.4em]"
+        />
+        <Button type="submit" disabled={busy} className="mt-1 w-full">
+          {busy ? "Checking…" : "Sign in"}
+        </Button>
+        <div className="flex justify-between">
+          <button type="button" className="min-h-11 text-[15px] font-bold text-primary" onClick={() => sendCode()}>
+            Send a new code
+          </button>
+          <button type="button" className="min-h-11 text-[15px] font-bold text-primary" onClick={() => setStep({ kind: "contact" })}>
+            Change {via === "email" ? "email" : "number"}
+          </button>
+        </div>
+      </form>
     );
   }
 
   return (
-    <form onSubmit={submit} className="m-0 flex flex-col gap-3">
+    <form onSubmit={sendCode} className="m-0 flex flex-col gap-3">
       <FormError message={error} />
-      <Label htmlFor="email">Email</Label>
-      <Input
-        id="email"
-        type="email"
-        inputMode="email"
-        autoComplete="email"
-        required
-        autoFocus={autoFocus}
-        placeholder="you@example.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      {!usePassword && (
+        <div role="tablist" aria-label="Sign in with" className="grid grid-cols-2 gap-1 rounded-[14px] bg-tint p-1">
+          {(["email", "phone"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={via === v}
+              onClick={() => {
+                setVia(v);
+                setError(null);
+              }}
+              className={clsx("h-11 rounded-[11px] text-[15px]", via === v ? "bg-surface font-bold text-ink shadow-[0_1px_2px_rgba(28,43,58,0.12)]" : "text-ink-2")}
+            >
+              {v === "email" ? "Email" : "Mobile number"}
+            </button>
+          ))}
+        </div>
+      )}
+      {via === "email" || usePassword ? (
+        <>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            required
+            autoFocus={autoFocus}
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </>
+      ) : (
+        <>
+          <Label htmlFor="phone">Mobile number</Label>
+          <PhoneInput id="phone" value={null} onChange={setPhone} testId="signin-phone" />
+        </>
+      )}
       {usePassword && (
         <>
           <Label htmlFor="password" className="mt-1">
@@ -92,17 +161,28 @@ export function SignInForm({ next, initialError, autoFocus }: { next: string | n
           <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </>
       )}
-      <Button type="submit" disabled={state.kind === "sending"} className="mt-1 w-full">
-        {state.kind === "sending" ? "Sending…" : usePassword ? "Sign in" : "Send me a sign-in link"}
+      <Button type="submit" disabled={busy} className="mt-1 w-full">
+        {busy ? "Sending…" : usePassword ? "Sign in" : "Send me a code"}
       </Button>
-      {!usePassword && <p className="m-0 text-center text-[15px] text-ink-3">We’ll email you a link. No password needed.</p>}
+      {!usePassword && (
+        <p className="m-0 text-center text-[15px] text-ink-3">
+          We’ll {via === "email" ? "email" : "text"} you a 6-digit code. No password needed.
+        </p>
+      )}
       <div className="my-1 flex items-center gap-3 text-sm text-ink-3">
         <span className="h-px flex-1 bg-line" />
         or
         <span className="h-px flex-1 bg-line" />
       </div>
-      <button type="button" onClick={() => setUsePassword((v) => !v)} className="min-h-11 text-base font-bold text-primary">
-        {usePassword ? "Email me a sign-in link instead" : "Sign in with email and password"}
+      <button
+        type="button"
+        onClick={() => {
+          setUsePassword((v) => !v);
+          setError(null);
+        }}
+        className="min-h-11 text-base font-bold text-primary"
+      >
+        {usePassword ? "Get a code instead" : "Sign in with email and password"}
       </button>
     </form>
   );

@@ -35,7 +35,7 @@ export default async function NotificationsPage() {
             <Avatar name={n.actor_name} seed={n.actor_id ?? n.id} size={40} />
             <span className="flex flex-col gap-0.5">
               <span className="text-base leading-snug">
-                <b>{n.actor_name ?? "The owner"}</b> {NOTIFY_VERB[n.kind as NotifyKind] ?? "posted"}: <b>{n.title}</b>
+                <b>{n.actor_name ?? "A caretaker"}</b> {NOTIFY_VERB[n.kind as NotifyKind] ?? "posted"}: <b>{n.title}</b>
               </span>
               <span className="text-sm text-ink-3">
                 {n.patient_name}’s circle · {timeAgo(n.created_at)}

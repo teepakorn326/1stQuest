@@ -53,7 +53,7 @@ export const POST = route<{ id: string }>(async (req, { params, log }) => {
       place: words.place?.slice(0, 40) ?? null,
       mediaIds: ordered.map((m) => m.id),
     });
-    queueTexts(card.sms, textFor({ kind: "memory", actorName: user.name ?? "The owner", patientName: circle.patient_name, title: card.title, path: `/cards/${card.id}` }));
+    queueTexts(card.sms, textFor({ kind: "memory", actorName: user.name ?? "A caretaker", patientName: circle.patient_name, title: card.title, path: `/cards/${card.id}` }));
     return NextResponse.json({ card: { id: card.id } }, { status: 201 });
   } catch (err) {
     if (err instanceof AiError) {
